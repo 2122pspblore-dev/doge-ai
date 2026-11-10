@@ -5,7 +5,7 @@ import rehypeHighlight from 'rehype-highlight';
 import { ArrowUp, Plus, PanelLeft, Sparkles, Settings2, MessageSquare, Mic, Paperclip, Volume2, VolumeX, X, Copy, Check, FileText } from 'lucide-react';
 
 const starters = ['Explain something complicated simply','Help me brainstorm ideas','Write or improve something'];
-const MAX_FILE_SIZE = 500 * 1024;
+const MAX_FILE_SIZE = 40 * 1024;
 const MAX_FILES = 3;
 const ALLOWED_EXTENSIONS = new Set(['txt','md','csv','json','js','jsx','ts','tsx','py','html','css','xml','yaml','yml','log','sql','sh','toml','ini']);
 
@@ -102,7 +102,7 @@ export default function App(){
    <div className="composer-wrap"><div className="composer">
     {files.length>0&&<div className="pending-files">{files.map((file,i)=><div className="pending-file" key={file.name+i}><FileText size={14}/><span>{file.name}</span><button onClick={()=>setFiles(current=>current.filter((_,index)=>index!==i))} title="Remove file"><X size={13}/></button></div>)}</div>}
     <textarea value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}} placeholder={busy?'Doge AI is thinking…':'Message Doge AI…'} rows={1}/>
-    <div className="composer-tools"><div><input ref={fileInput} className="file-input" type="file" multiple accept=".txt,.md,.csv,.json,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.yaml,.yml,.log,.sql,.sh,.toml,.ini" onChange={e=>addFiles(e.target.files)}/><button className="tool" title="Upload text or code files" onClick={()=>fileInput.current?.click()}><Paperclip size={17}/></button><button className="tool voice" title="Text-to-speech is available on assistant replies"><Mic size={17}/></button></div><button className="send" onClick={()=>send()} disabled={(!text.trim()&&!files.length)||busy}><ArrowUp size={18}/></button></div>
+    <div className="composer-tools"><div><input ref={fileInput} className="file-input" type="file" multiple accept=".txt,.md,.csv,.json,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.yaml,.yml,.log,.sql,.sh,.toml,.ini" onChange={e=>addFiles(e.target.files)}/><button className="tool" title="Upload text or code files" onClick={()=>fileInput.current?.click()}><Paperclip size={17}/></button></div><button className="send" onClick={()=>send()} disabled={(!text.trim()&&!files.length)||busy}><ArrowUp size={18}/></button></div>
    </div>{error&&<div className="error">{error}</div>}<div className="disclaimer">Doge AI can make mistakes. Check important information.</div></div>
   </main></div>
 }
