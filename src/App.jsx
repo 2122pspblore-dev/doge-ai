@@ -38,7 +38,8 @@ function AssistantContent({ content }) {
 }
 
 export default function App(){
- const [messages,setMessages]=useState([]);
+ const [messages,setMessages]=useState(()=>{try{return JSON.parse(localStorage.getItem('doge-ai-current')||'[]')}catch{return []}});
+ const scrollRef=useRef(null);
  const [text,setText]=useState('');
  const [sidebar,setSidebar]=useState(true);
  const [advanced,setAdvanced]=useState(false);
@@ -49,6 +50,8 @@ export default function App(){
  const fileInput=useRef(null);
 
  useEffect(()=>()=>{ if ('speechSynthesis' in window) window.speechSynthesis.cancel(); },[]);
+ useEffect(()=>{localStorage.setItem('doge-ai-current',JSON.stringify(messages));},[messages]);
+ useEffect(()=>{scrollRef.current?.scrollTo({top:scrollRef.current.scrollHeight,behavior:'smooth'});},[messages,busy]);
 
  async function addFiles(fileList){
    const incoming=Array.from(fileList || []);
@@ -96,9 +99,9 @@ export default function App(){
  }
 
  return <div className="app">
-  {sidebar&&<aside className="sidebar"><div className="brand"><div className="logo">d</div><span>Doge AI</span></div><button className="new-chat" onClick={()=>{setMessages([]);setText('');setFiles([]);setError('');if('speechSynthesis' in window)window.speechSynthesis.cancel();setSpeakingId(null);}}><Plus size={16}/> New chat</button><div className="side-label">YOUR SPACE</div><button className="side-item"><MessageSquare size={16}/> Chat</button><button className="side-item" onClick={()=>setAdvanced(v=>!v)}><Sparkles size={16}/> Advanced mode <span className="toggle">{advanced?'ON':'OFF'}</span></button><div className="side-bottom"><button className="side-item"><Settings2 size={16}/> Settings</button><div className="profile"><div className="avatar">D</div><div><b>Doge User</b><small>Free plan</small></div></div></div></aside>}
+  {sidebar&&<aside className="sidebar"><div className="brand"><div className="logo">d</div><div className="brand-text"><span>Doge AI</span><small>Advik Kumar</small></div></div><button className="new-chat" onClick={()=>{setMessages([]);setText('');setFiles([]);setError('');if('speechSynthesis' in window)window.speechSynthesis.cancel();setSpeakingId(null);}}><Plus size={16}/> New chat</button><div className="side-label">YOUR SPACE</div><button className="side-item"><MessageSquare size={16}/> Chat</button><button className="side-item" onClick={()=>setAdvanced(v=>!v)}><Sparkles size={16}/> Advanced mode <span className="toggle">{advanced?'ON':'OFF'}</span></button><div className="side-bottom"><button className="side-item"><Settings2 size={16}/> Settings</button><div className="profile"><div className="avatar">D</div><div><b>Doge User</b><small>Free plan</small></div></div></div></aside>}
   <main className="main"><header><button className="icon-btn" onClick={()=>setSidebar(v=>!v)} title="Toggle sidebar"><PanelLeft size={18}/></button><div className="model">Doge <span>AI</span><span className="chevron">⌄</span></div><button className="mode" onClick={()=>setAdvanced(v=>!v)}>{advanced?'Advanced':'Standard'} <span className="dot"/></button></header>
-   <section className={`conversation ${messages.length?'has-messages':''}`}>{messages.length===0?<div className="welcome"><div className="big-logo">d</div><h1>What can I help with?</h1><p>Ask anything. Keep it simple.</p><div className="starter-grid">{starters.map(s=><button key={s} onClick={()=>send(s)}>{s}<span>↗</span></button>)}</div></div>:<div className="messages">{messages.map((m,i)=><div className={`message ${m.role}`} key={i}>{m.role==='assistant'&&<div className="mini-logo">d</div>}<div className="message-body">{m.role==='assistant'&&<div className="message-actions"><button className="tool speak-button" onClick={()=>speak(m.content,i)} title={speakingId===i?'Stop speaking':'Read aloud'}>{speakingId===i?<VolumeX size={15}/>:<Volume2 size={15}/>}<span>{speakingId===i?'Stop':'Read aloud'}</span></button></div>}<div className="bubble">{m.role==='assistant'?<AssistantContent content={m.content}/>:<><div>{m.displayContent || m.content}</div>{m.attachments?.length>0&&<div className="message-attachments">{m.attachments.map(name=><span className="file-chip" key={name}><FileText size={13}/>{name}</span>)}</div>}</>}</div></div></div>)}</div>}</section>
+   <section ref={scrollRef} className={`conversation ${messages.length?'has-messages':''}`}>{messages.length===0?<div className="welcome"><div className="big-logo">d</div><h1>What can I help with?</h1><p>Ask anything. Keep it simple.</p><div className="starter-grid">{starters.map(s=><button key={s} onClick={()=>send(s)}>{s}<span>↗</span></button>)}</div></div>:<div className="messages">{messages.map((m,i)=><div className={`message ${m.role}`} key={i}>{m.role==='assistant'&&<div className="mini-logo">d</div>}<div className="message-body">{m.role==='assistant'&&<div className="message-actions"><button className="tool speak-button" onClick={()=>speak(m.content,i)} title={speakingId===i?'Stop speaking':'Read aloud'}>{speakingId===i?<VolumeX size={15}/>:<Volume2 size={15}/>}<span>{speakingId===i?'Stop':'Read aloud'}</span></button></div>}<div className="bubble">{m.role==='assistant'?<AssistantContent content={m.content}/>:<><div>{m.displayContent || m.content}</div>{m.attachments?.length>0&&<div className="message-attachments">{m.attachments.map(name=><span className="file-chip" key={name}><FileText size={13}/>{name}</span>)}</div>}</>}</div></div></div>)}</div>}</section>
    <div className="composer-wrap"><div className="composer">
     {files.length>0&&<div className="pending-files">{files.map((file,i)=><div className="pending-file" key={file.name+i}><FileText size={14}/><span>{file.name}</span><button onClick={()=>setFiles(current=>current.filter((_,index)=>index!==i))} title="Remove file"><X size={13}/></button></div>)}</div>}
     <textarea value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}} placeholder={busy?'Doge AI is thinking…':'Message Doge AI…'} rows={1}/>
