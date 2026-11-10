@@ -1,28 +1,63 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
     if (url.pathname === "/api/chat") {
-      if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "Content-Type": "application/json", "Allow": "POST" } });
-      if (!env.OPENAI_API_KEY) return Response.json({ error: "AI isn't configured yet. Add OPENAI_API_KEY as a Worker secret." }, { status: 503 });
+      if (request.method !== "POST") {
+        return Response.json(
+          { error: "Method not allowed" },
+          { status: 405, headers: { Allow: "POST" } }
+        );
+      }
+
+      if (!env.AI) {
+        return Response.json(
+          { error: "Doge AI is not connected to Cloudflare Workers AI yet." },
+          { status: 503 }
+        );
+      }
+
       try {
         const body = await request.json();
-        const messages = body.messages;
-        if (!Array.isArray(messages) || messages.length < 1 || messages.length > 40) return Response.json({ error: "Send between 1 and 40 messages." }, { status: 400 });
-        const clean = messages.map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content ?? "").slice(0, 8000) }));
-        const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: env.OPENAI_MODEL || "gpt-4o-mini",
-            messages: [{ role: "system", content: "You are Doge AI, a friendly, clear, helpful assistant. Keep answers understandable and concise. Do not claim to have tools or abilities you do not have." }, ...clean],
-            temperature: body.advanced ? 0.8 : 0.6
-          })
+        if (!Array.isArray(body.messages) || body.messages.length < 1 || body.messages.length > 40) {
+          return Response.json({ error: "Send between 1 and 40 messages." }, { status: 400 });
+        }
+
+        const messages = [
+          {
+            role: "system",
+            content: "You are Doge AI, a friendly, clear, helpful assistant. Keep answers understandable and concise. Do not claim to have tools or abilities you do not have."
+          },
+          ...body.messages.map((message) => ({
+            role: message.role === "assistant" ? "assistant" : "user",
+            content: String(message.content ?? "").slice(0, 8000)
+          }))
+        ];
+
+        const result = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
+          messages,
+          max_tokens: 1200,
+          temperature: body.advanced ? 0.8 : 0.6
         });
-        const data = await upstream.json();
-        if (!upstream.ok) return Response.json({ error: data.error?.message || "The AI provider returned an error." }, { status: upstream.status });
-        return Response.json({ reply: data.choices?.[0]?.message?.content || "I couldn't generate a response." });
-      } catch { return Response.json({ error: "Invalid request or AI connection failed." }, { status: 500 }); }
+
+        const reply =
+          result?.choices?.[0]?.message?.content ??
+          result?.response ??
+          result?.result?.response;
+
+        if (typeof reply !== "string" || !reply.trim()) {
+          return Response.json({ error: "The AI model returned an empty response. Please try again." }, { status: 502 });
+        }
+
+        return Response.json({ reply });
+      } catch (error) {
+        return Response.json(
+          { error: "Doge AI couldn't reach its AI model. Please try again in a moment." },
+          { status: 502 }
+        );
+      }
     }
+
     return env.ASSETS.fetch(request);
   }
 };
