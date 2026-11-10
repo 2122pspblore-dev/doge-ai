@@ -30,3 +30,11 @@
 .file-chip{background:#211f26}
 .error{color:#e59b9b;font-size:12px;margin:8px 4px}
 @media(max-width:650px){.code-block pre{font-size:11px}.pending-file span{max-width:130px}}
+
+/* Syntax colors for highlighted code */
+.code-block .hljs-comment,.code-block .hljs-quote{color:#898493}
+.code-block .hljs-keyword,.code-block .hljs-selector-tag,.code-block .hljs-literal{color:#c6a0f6}
+.code-block .hljs-string,.code-block .hljs-attr,.code-block .hljs-template-tag{color:#a6da95}
+.code-block .hljs-number,.code-block .hljs-built_in,.code-block .hljs-type{color:#f5a97f}
+.code-block .hljs-title,.code-block .hljs-function,.code-block .hljs-section{color:#8aadf4}
+.code-block .hljs-variable,.code-block .hljs-params{color:#eed49f}
