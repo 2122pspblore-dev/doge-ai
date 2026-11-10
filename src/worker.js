@@ -23,14 +23,14 @@ export default {
           return Response.json({ error: "Send between 1 and 40 messages." }, { status: 400 });
         }
 
-        const messages = [
+        const totalChars = body.messages.reduce((sum, message) => sum + String(message.content ?? "").length, 0);\n        if (totalChars > 100000) {\n          return Response.json({ error: "This conversation is too large. Please upload smaller files or start a new chat." }, { status: 413 });\n        }\n\n        const messages = [
           {
             role: "system",
             content: "You are Doge AI, a friendly, clear, helpful assistant. Keep answers understandable and concise. Do not claim to have tools or abilities you do not have."
           },
           ...body.messages.map((message) => ({
             role: message.role === "assistant" ? "assistant" : "user",
-            content: String(message.content ?? "").slice(0, 8000)
+            content: String(message.content ?? "").slice(0, 50000)
           }))
         ];
 
