@@ -78,12 +78,10 @@ export default function App(){
  }
  function openChat(id){setActiveId(id);setText('');setFiles([]);setError('');}
  function deleteChat(id){
-   setChats(current=>{
-     const next=current.filter(chat=>chat.id!==id);
-     if(!next.length){const fresh=makeChat();setActiveId(fresh.id);return [fresh];}
-     if(activeId===id)setActiveId(next[0].id);
-     return next;
-   });
+   const next=chats.filter(chat=>chat.id!==id);
+   if(!next.length){const fresh=makeChat();setChats([fresh]);setActiveId(fresh.id);return;}
+   setChats(next);
+   if(activeId===id)setActiveId(next[0].id);
  }
 
  function startVoiceInput(){
