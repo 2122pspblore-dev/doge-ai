@@ -38,3 +38,5 @@
 .code-block .hljs-number,.code-block .hljs-built_in,.code-block .hljs-type{color:#f5a97f}
 .code-block .hljs-title,.code-block .hljs-function,.code-block .hljs-section{color:#8aadf4}
 .code-block .hljs-variable,.code-block .hljs-params{color:#eed49f}
+
+.history-label{margin-top:18px}.history-chat{max-width:100%;overflow:hidden}.history-chat span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
