@@ -189,3 +189,33 @@ body{overflow:hidden}
 .doge-ai-edit{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #393540}
 .doge-ai-edit textarea{width:100%;background:#17151b;border:1px solid #393540;border-radius:8px;padding:9px;color:#eee;font-size:12px;resize:vertical}
 .doge-editor-notice{margin:9px 0 0;color:#b9d4b2;font-size:11px;line-height:1.5}
+
+
+/* Floating Code Runner window */
+.doge-editor-overlay{position:fixed;inset:0;z-index:80;background:rgba(7,6,10,.58);backdrop-filter:blur(3px)}
+.doge-editor{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(920px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:0 18px 18px;box-shadow:0 24px 90px #000b;border:1px solid #51495d;border-radius:16px}
+.doge-editor-titlebar{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -18px 15px;padding:12px 16px;background:#211f26;border-bottom:1px solid #393540;border-radius:15px 15px 0 0;cursor:grab;touch-action:none;user-select:none}
+.doge-editor-titlebar:active{cursor:grabbing}
+.doge-editor-window-title{display:flex;align-items:center;gap:9px;color:#e8e3ed;font-size:13px;font-weight:600}
+.doge-editor-window-title svg{color:#bda8d6}
+.doge-editor-window-title small{font-size:10px;font-weight:400;color:#898391;margin-left:5px}
+.doge-editor-close{display:grid;place-items:center;width:31px;height:31px;border:1px solid #49434f;border-radius:8px;background:#302b36;color:#d8d2df;cursor:pointer}
+.doge-editor-close:hover{background:#49323b;color:#fff;border-color:#77515d}
+.doge-editor-top{padding-bottom:12px;border-bottom:1px solid #393540}
+.doge-editor-top label{font-size:12px}
+.doge-editor-actions button{white-space:nowrap}
+.doge-editor-input{min-height:220px;max-height:38vh}
+.doge-editor-input textarea{min-height:220px}
+.doge-run-actions .v2-primary{justify-content:center;min-width:110px}
+.doge-ai-edit{gap:9px}
+.doge-ai-edit label{font-size:12px;font-weight:600}
+.doge-ai-edit textarea{min-height:64px}
+.doge-editor-notice{padding:8px 10px;background:#242d25;border:1px solid #354737;border-radius:8px}
+@media(max-width:700px){
+ .doge-editor{width:calc(100vw - 20px);max-height:calc(100dvh - 20px);padding:0 12px 12px}
+ .doge-editor-titlebar{margin:0 -12px 12px;padding:10px 12px}
+ .doge-editor-window-title small{display:none}
+ .doge-editor-input,.doge-editor-input textarea{min-height:180px}
+ .doge-editor-input{max-height:32vh}
+ .doge-editor-top{align-items:flex-start}
+}
