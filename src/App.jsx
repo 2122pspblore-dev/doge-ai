@@ -45,6 +45,7 @@ export default function App(){
  const [sidebar,setSidebar]=useState(true);
  const [advanced,setAdvanced]=useState(false);
  const [busy,setBusy]=useState(false);
+ const [thinkingLabel,setThinkingLabel]=useState('Thinking through your message…');
  const [error,setError]=useState('');
  const [files,setFiles]=useState([]);
  const [speakingId,setSpeakingId]=useState(null);
@@ -80,14 +81,33 @@ export default function App(){
    const attachmentPrompt=attached.map(file=>'\n\n--- Attached file: '+file.name+' ---\n'+file.content+'\n--- End of '+file.name+' ---').join('');
    const prompt=clean+attachmentPrompt;
    const history=[...messages,{role:'user',content:prompt,displayContent:clean,attachments:attached.map(file=>file.name)}];
-   setMessages(history);setText('');setFiles([]);setError('');setBusy(true);
+   setMessages(history);setText('');setFiles([]);setError('');setThinkingLabel('Thinking through your message…');setBusy(true);
    try{
-     const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history,advanced})});
-     const data=await response.json();
-     if(!response.ok)throw new Error(data.error||'Request failed');
+     let data=null;
+     let lastError=null;
+     for(let attempt=0;attempt<3;attempt++){
+       try{
+         const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history,advanced})});
+         const payload=await response.json().catch(()=>({}));
+         if(!response.ok){
+           const failure=new Error(payload.error||'Request failed');
+           if(response.status<500&&response.status!==429)throw failure;
+           throw failure;
+         }
+         if(typeof payload.reply!=='string'||!payload.reply.trim())throw new Error('The AI returned an empty answer.');
+         data=payload;
+         break;
+       }catch(err){
+         lastError=err;
+         if(attempt===2)break;
+         setThinkingLabel('That response failed. Retrying…');
+         await new Promise(resolve=>setTimeout(resolve,600*(attempt+1)));
+       }
+     }
+     if(!data)throw lastError||new Error('Could not reach Doge AI.');
      setMessages(m=>[...m,{role:'assistant',content:data.reply}]);
-   }catch(e){setError(e.message||'Could not reach Doge AI.');}
-   finally{setBusy(false);}
+   }catch(e){setError((e.message||'Could not reach Doge AI.')+' Please try again.');}
+   finally{setBusy(false);setThinkingLabel('Thinking through your message…');}
  }
 
  function speak(content,id){
@@ -104,7 +124,7 @@ export default function App(){
  return <div className="app">
   {sidebar&&<aside className="sidebar"><div className="brand"><div className="logo">d</div><div className="brand-text"><span>Doge AI</span><small>Advik Kumar</small></div></div><button className="new-chat" onClick={startNewChat}><Plus size={16}/> New chat</button><div className="side-label">YOUR SPACE</div><button className="side-item"><MessageSquare size={16}/> Chat</button><button className="side-item" onClick={()=>setAdvanced(v=>!v)}><Sparkles size={16}/> Advanced mode <span className="toggle">{advanced?'ON':'OFF'}</span></button><div className="side-label history-label">RECENT CHATS</div>{savedChats.map(chat=><button className="side-item history-chat" key={chat.id} title={chat.title} onClick={()=>setMessages(chat.messages)}><MessageSquare size={14}/><span>{chat.title}</span></button>)}<div className="side-bottom"><button className="side-item"><Settings2 size={16}/> Settings</button><div className="profile"><div className="avatar">D</div><div><b>Doge User</b><small>Free plan</small></div></div></div></aside>}
   <main className="main"><header><button className="icon-btn" onClick={()=>setSidebar(v=>!v)} title="Toggle sidebar"><PanelLeft size={18}/></button><div className="model">Doge <span>AI</span><span className="chevron">⌄</span></div><button className="mode" onClick={()=>setAdvanced(v=>!v)}>{advanced?'Advanced':'Standard'} <span className="dot"/></button></header>
-   <section ref={scrollRef} className={`conversation ${messages.length?'has-messages':''}`}>{messages.length===0?<div className="welcome"><div className="big-logo">d</div><h1>What can I help with?</h1><p>Ask anything. Keep it simple.</p><div className="starter-grid">{starters.map(s=><button key={s} onClick={()=>send(s)}>{s}<span>↗</span></button>)}</div></div>:<div className="messages">{messages.map((m,i)=><div className={`message ${m.role}`} key={i}>{m.role==='assistant'&&<div className="mini-logo">d</div>}<div className="message-body">{m.role==='assistant'&&<div className="message-actions"><button className="tool speak-button" onClick={()=>speak(m.content,i)} title={speakingId===i?'Stop speaking':'Read aloud'}>{speakingId===i?<VolumeX size={15}/>:<Volume2 size={15}/>}<span>{speakingId===i?'Stop':'Read aloud'}</span></button></div>}<div className="bubble">{m.role==='assistant'?<AssistantContent content={m.content}/>:<><div>{m.displayContent || m.content}</div>{m.attachments?.length>0&&<div className="message-attachments">{m.attachments.map(name=><span className="file-chip" key={name}><FileText size={13}/>{name}</span>)}</div>}</>}</div></div></div>)}</div>}</section>
+   <section ref={scrollRef} className={`conversation ${messages.length?'has-messages':''}`}>{messages.length===0?<div className="welcome"><div className="big-logo">d</div><h1>What can I help with?</h1><p>Ask anything. Keep it simple.</p><div className="starter-grid">{starters.map(s=><button key={s} onClick={()=>send(s)}>{s}<span>↗</span></button>)}</div></div>:<div className="messages">{messages.map((m,i)=><div className={`message ${m.role}`} key={i}>{m.role==='assistant'&&<div className="mini-logo">d</div>}<div className="message-body">{m.role==='assistant'&&<div className="message-actions"><button className="tool speak-button" onClick={()=>speak(m.content,i)} title={speakingId===i?'Stop speaking':'Read aloud'}>{speakingId===i?<VolumeX size={15}/>:<Volume2 size={15}/>}<span>{speakingId===i?'Stop':'Read aloud'}</span></button></div>}<div className="bubble">{m.role==='assistant'?<AssistantContent content={m.content}/>:<><div>{m.displayContent || m.content}</div>{m.attachments?.length>0&&<div className="message-attachments">{m.attachments.map(name=><span className="file-chip" key={name}><FileText size={13}/>{name}</span>)}</div>}</>}</div></div></div>)}</div>}{busy&&<div className="thinking-indicator"><div className="mini-logo">d</div><div className="thinking-content"><div className="thinking-title">{thinkingLabel}</div><div className="thinking-dots"><i></i><i></i><i></i></div></div></div>}</section>
    <div className="composer-wrap"><div className="composer">
     {files.length>0&&<div className="pending-files">{files.map((file,i)=><div className="pending-file" key={file.name+i}><FileText size={14}/><span>{file.name}</span><button onClick={()=>setFiles(current=>current.filter((_,index)=>index!==i))} title="Remove file"><X size={13}/></button></div>)}</div>}
     <textarea value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}} placeholder={busy?'Doge AI is thinking…':'Message Doge AI…'} rows={1}/>
