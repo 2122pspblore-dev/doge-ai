@@ -30,7 +30,7 @@ function CodeBlock({children}){
 function AssistantContent({content}){return <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]} components={{pre:({children})=><CodeBlock>{children}</CodeBlock>,code:({className,children,...props})=><code className={className||'inline-code'} {...props}>{children}</code>}}>{content}</ReactMarkdown>}
 
 export default function App(){
- const [chats,setChats]=useState(readChats);
+ const [chats,setChats]=useState(()=>{const saved=readChats();return saved.length?saved:[makeChat()]});
  const [activeId,setActiveId]=useState(()=>readChats()[0]?.id||null);
  const [text,setText]=useState(''),[sidebar,setSidebar]=useState(true),[advanced,setAdvanced]=useState(false);
  const [busy,setBusy]=useState(false),[thinkingLabel,setThinkingLabel]=useState('Doge AI is thinking…'),[error,setError]=useState('');
