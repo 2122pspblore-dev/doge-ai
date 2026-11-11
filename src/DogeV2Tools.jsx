@@ -68,7 +68,7 @@ export default function DogeV2Tools({ activeChat, messages, chats, setChats, set
     const next = [{id:Date.now(), title:'Artifact ' + new Date().toLocaleString(), content}, ...artifacts];
     setArtifacts(next); localStorage.setItem('doge-ai-artifacts-v1', JSON.stringify(next)); setArtifactText('');
   }
-  function exportChats() {
+  function exportCurrentChat() {\n    const body = '# ' + (activeChat?.title || 'Doge AI chat') + '\\n\\n' + messages.map(m => (m.role === 'user' ? '**You**' : '**Doge AI**') + '\\n\\n' + (m.content || '')).join('\\n\\n---\\n\\n');\n    const blob = new Blob([body], {type:'text/markdown'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='doge-ai-chat.md'; a.click(); URL.revokeObjectURL(a.href);\n  }\n  function exportChats() {
     const blob = new Blob([JSON.stringify(chats, null, 2)], {type:'application/json'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'doge-ai-backup.json'; a.click(); URL.revokeObjectURL(a.href);
   }
@@ -81,14 +81,14 @@ export default function DogeV2Tools({ activeChat, messages, chats, setChats, set
       <button onClick={()=>setImageOpen(true)}><ImageIcon size={14}/>Image</button><CodeRunner/>
       <button onClick={branchConversation}><GitBranch size={14}/>Branch</button>
       <button onClick={()=>{setArtifactText(messages.filter(m=>m.role==='assistant').slice(-1)[0]?.content||'');setArtifactOpen(true)}}><FilePlus2 size={14}/>Artifact</button>
-      <select className="v2-prompt-select" aria-label="Prompt library" defaultValue="" onChange={e=>{if(e.target.value)setText(e.target.value);e.target.value="";}}><option value="">Prompt library</option>{PROMPTS.map(p=><option key={p} value={p}>{p}</option>)}</select><button onClick={exportChats}><Download size={14}/>Backup</button>
+      <select className="v2-prompt-select" aria-label="Prompt library" defaultValue="" onChange={e=>{if(e.target.value)setText(e.target.value);e.target.value="";}}><option value="">Prompt library</option>{PROMPTS.map(p=><option key={p} value={p}>{p}</option>)}</select><button onClick={exportCurrentChat}><Download size={14}/>Export chat</button><button onClick={exportChats}><Download size={14}/>Backup</button>
       <button onClick={()=>setSearchOpen(v=>!v)}><BarChart3 size={14}/>Settings</button>
     </div>
     {searchOpen && <div className="v2-panel">
       <button className="v2-close" onClick={()=>setSearchOpen(false)}><X size={14}/></button>
       <label>Custom memory (saved only in this browser)</label>
       <textarea rows={3} value={memory} onChange={e=>{setMemory(e.target.value);localStorage.setItem('doge-ai-memory-v1',e.target.value);}} placeholder="Preferences you want Doge AI to remember. Avoid private information."/>
-      <div className="v2-stats"><b><BarChart3 size={14}/> Usage on this device</b><span>{usage.messages||0} messages · {usage.searches||0} searches · {usage.images||0} images</span></div>
+      <div className="v2-stats"><b><BarChart3 size={14}/> Usage on this device</b><span>{messages.length} messages in this chat · {usage.searches||0} searches · {usage.images||0} images</span></div>
       <div className="v2-stats"><b><BookOpen size={14}/> Saved artifacts</b><span>{artifacts.length} saved</span></div>
       {artifacts.slice(0,5).map(a=><button className="v2-artifact" key={a.id} onClick={()=>{setArtifactText(a.content);setArtifactOpen(true)}}>{a.title}</button>)}
     </div>}
