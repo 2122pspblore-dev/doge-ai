@@ -73,7 +73,7 @@ export default function CodeRunner() {
       `;
     } else {
       frame.srcdoc = `
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; connect-src https://cdn.jsdelivr.net; img-src 'none'; style-src 'unsafe-inline'">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; connect-src https://cdn.jsdelivr.net; img-src 'none'; style-src 'unsafe-inline'">
         <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"><\\/script>
         <script>
           (async () => {
