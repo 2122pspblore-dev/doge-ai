@@ -84,6 +84,81 @@ export default {
       } catch { return json({ error: "Couldn't complete web search." }, 502); }
     }
 
+
+    // Device-based DOGE AI profiles and shared group conversations.
+    const db = env.DB;
+    if (url.pathname.startsWith("/api/users") || url.pathname.startsWith("/api/groups")) {
+      if (!db) return json({ error: "Group chat database is not configured." }, 503);
+      const deviceId = request.headers.get("X-Doge-Device") || "";
+      const validId = /^[a-f0-9-]{36}$/i.test(deviceId);
+      const user = validId ? await db.prepare("SELECT device_id, username FROM users WHERE device_id = ?").bind(deviceId).first() : null;
+      const parts = url.pathname.split("/").filter(Boolean);
+      try {
+        if (url.pathname === "/api/users/me" && request.method === "GET") return json({ user: user || null });
+        if (url.pathname === "/api/users/register" && request.method === "POST") {
+          const body = await request.json();
+          const username = String(body.username || "").trim();
+          if (!validId) return json({ error: "This device could not be identified. Refresh and try again." }, 400);
+          if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) return json({ error: "Username must be 3–20 characters using letters, numbers, or underscores." }, 400);
+          if (user) return json({ user });
+          try {
+            await db.prepare("INSERT INTO users (device_id, username) VALUES (?, ?)").bind(deviceId, username).run();
+          } catch { return json({ error: "That username is already taken. Choose another one." }, 409); }
+          return json({ user: { device_id: deviceId, username } }, 201);
+        }
+        if (!user) return json({ error: "Create your DOGE AI user first." }, 401);
+
+        if (url.pathname === "/api/groups" && request.method === "GET") {
+          const result = await db.prepare("SELECT g.id, g.name, g.owner_id, g.created_at, (SELECT COUNT(*) FROM group_members gm WHERE gm.group_id=g.id) AS member_count FROM groups g JOIN group_members mine ON mine.group_id=g.id WHERE mine.device_id=? ORDER BY g.created_at DESC").bind(deviceId).all();
+          return json({ groups: result.results || [] });
+        }
+        if (url.pathname === "/api/groups" && request.method === "POST") {
+          const body = await request.json();
+          const name = String(body.name || "").trim().slice(0, 48);
+          if (!name) return json({ error: "Enter a group name." }, 400);
+          const id = crypto.randomUUID();
+          await db.batch([
+            db.prepare("INSERT INTO groups (id, name, owner_id) VALUES (?, ?, ?)").bind(id, name, deviceId),
+            db.prepare("INSERT INTO group_members (group_id, device_id, role) VALUES (?, ?, 'owner')").bind(id, deviceId)
+          ]);
+          return json({ group: { id, name, owner_id: deviceId, member_count: 1 } }, 201);
+        }
+        const groupId = parts[2] || "";
+        if (!/^[a-f0-9-]{36}$/i.test(groupId)) return json({ error: "Invalid group." }, 400);
+        const membership = await db.prepare("SELECT role FROM group_members WHERE group_id=? AND device_id=?").bind(groupId, deviceId).first();
+        if (!membership) return json({ error: "You are not a member of this group." }, 403);
+
+        if (parts[3] === "members" && request.method === "GET") {
+          const result = await db.prepare("SELECT u.device_id, u.username, gm.role FROM group_members gm JOIN users u ON u.device_id=gm.device_id WHERE gm.group_id=? ORDER BY CASE gm.role WHEN 'owner' THEN 0 ELSE 1 END, u.username").bind(groupId).all();
+          return json({ members: result.results || [] });
+        }
+        if (parts[3] === "members" && request.method === "POST") {
+          if (membership.role !== "owner") return json({ error: "Only the group owner can invite people." }, 403);
+          const body = await request.json();
+          const username = String(body.username || "").trim();
+          const invited = await db.prepare("SELECT device_id FROM users WHERE username=? COLLATE NOCASE").bind(username).first();
+          if (!invited) return json({ error: "No DOGE AI user found with that username." }, 404);
+          await db.prepare("INSERT OR IGNORE INTO group_members (group_id, device_id, role) VALUES (?, ?, 'member')").bind(groupId, invited.device_id).run();
+          return json({ success: true });
+        }
+        if (parts[3] === "messages" && request.method === "GET") {
+          const result = await db.prepare("SELECT m.id, m.sender_id, u.username, m.content, m.created_at FROM group_messages m JOIN users u ON u.device_id=m.sender_id WHERE m.group_id=? ORDER BY m.created_at DESC LIMIT 100").bind(groupId).all();
+          return json({ messages: (result.results || []).reverse() });
+        }
+        if (parts[3] === "messages" && request.method === "POST") {
+          const body = await request.json();
+          const text = String(body.content || "").trim();
+          if (!text || text.length > 5000) return json({ error: "Message must be 1–5,000 characters." }, 400);
+          const id = crypto.randomUUID();
+          await db.prepare("INSERT INTO group_messages (id, group_id, sender_id, content) VALUES (?, ?, ?, ?)").bind(id, groupId, deviceId, text).run();
+          return json({ message: { id, sender_id: deviceId, username: user.username, content: text } }, 201);
+        }
+        return json({ error: "Not found." }, 404);
+      } catch (error) {
+        return json({ error: "Group chat request failed. Please try again." }, 500);
+      }
+    }
+
     return env.ASSETS.fetch(request);
   }
 };
