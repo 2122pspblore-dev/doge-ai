@@ -250,3 +250,9 @@ body{overflow:hidden}
 :root[data-theme="light"] .composer textarea,:root[data-theme="light"] .cowork-form textarea{color:#24212a;background:#fff}
 :root[data-theme="light"] .side-item,:root[data-theme="light"] .history-open,:root[data-theme="light"] .cowork-launch{color:#3b3544}
 :root[data-theme="light"] .cowork-step b,:root[data-theme="light"] .cowork-head b,:root[data-theme="light"] .cowork-plan>p{color:#292431}
+
+.image-mode-tabs{display:flex;gap:6px;margin:8px 0 10px}
+.image-mode-tabs button{border:1px solid #45404c;background:#24212a;color:#c9c3d0;border-radius:7px;padding:7px 10px;font-size:11px;cursor:pointer}
+.image-mode-tabs button.active{background:#e7e3ed;color:#29242e;border-color:#e7e3ed}
+.v2-dialog input[type="file"]{width:100%;color:#aaa4b2;font-size:11px;margin:5px 0}
+.v2-dialog>small{display:block;color:#928b9b;font-size:10px;margin:4px 0 8px}
