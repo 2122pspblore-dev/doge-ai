@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import CodeRunner from './CodeRunner.jsx';
+import Cowork from './Cowork.jsx';
 import { Globe, Image as ImageIcon, GitBranch, BookOpen, Download, BarChart3, FilePlus2, X } from 'lucide-react';
 
 const PROMPTS = [
@@ -11,7 +12,7 @@ const PROMPTS = [
   'Summarize the key points'
 ];
 
-export default function DogeV2Tools({ activeChat, messages, chats, setChats, setActiveId, setText, setError, updateChat }) {
+export default function DogeV2Tools({ activeChat, messages, chats, setChats, setActiveId, setText, setError, updateChat, deviceProfile }) {
   const [model, setModel] = useState(() => localStorage.getItem('doge-ai-model') || 'fast');
   const [memory, setMemory] = useState(() => localStorage.getItem('doge-ai-memory-v1') || '');
   const [searching, setSearching] = useState(false);
@@ -87,7 +88,7 @@ export default function DogeV2Tools({ activeChat, messages, chats, setChats, set
       <select aria-label="Model" value={model} onChange={e=>{setModel(e.target.value);localStorage.setItem('doge-ai-model',e.target.value);}}>
         <option value="fast">Fast model</option><option value="thinking">Thinking model</option>
       </select>
-      <button onClick={searchWeb} disabled={searching}><Globe size={14}/>{searching?'Searching':'Web search'}</button>
+      <Cowork username={deviceProfile?.username || ""}/>
       <button onClick={()=>setImageOpen(true)}><ImageIcon size={14}/>Image</button><CodeRunner/>
       <button onClick={branchConversation}><GitBranch size={14}/>Branch</button>
       <button onClick={()=>{setArtifactText(messages.filter(m=>m.role==='assistant').slice(-1)[0]?.content||'');setArtifactOpen(true)}}><FilePlus2 size={14}/>Artifact</button>
