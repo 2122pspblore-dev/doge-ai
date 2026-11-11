@@ -7,7 +7,7 @@ import rehypeHighlight from 'rehype-highlight';
 import { ArrowUp, Plus, PanelLeft, Sparkles, Settings2, MessageSquare, Mic, MicOff, Paperclip, Volume2, VolumeX, X, Copy, Check, FileText, Share2, Trash2, Search, Pencil, RefreshCw, Pin, PinOff, Send, Square } from 'lucide-react';
 
 const HISTORY_KEY='doge-ai-conversations-v2';
-const SHARE_URL='https://dog1e.vercel.app/';
+const SHARE_URL='https://doge-ai.2122pspblore.workers.dev/';
 const MAX_FILE_SIZE=500*1024, MAX_FILES=3;
 const ALLOWED_EXTENSIONS=new Set(['txt','md','csv','json','js','jsx','ts','tsx','py','html','css','xml','yaml','yml','log','sql','sh','toml','ini']);
 const starters=['Explain something complicated simply','Help me brainstorm ideas','Write or improve something'];
