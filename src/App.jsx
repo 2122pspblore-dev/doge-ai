@@ -87,7 +87,7 @@ export default function App(){
   const history=overrideMessages||[...messages,user],chatId=activeChat.id;
   updateChat(chatId,c=>({...c,title:c.messages.length?c.title:(clean.slice(0,42)||attached[0]?.name||'New chat'),messages:[...history,{role:'assistant',content:'',streaming:true}],updatedAt:Date.now()}));
   setText('');setFiles([]);setError('');setBusy(true);setThinkingLabel('Doge AI is thinking…');
-  try{await streamReply(history,chatId)}catch(e){if(e.name!=='AbortError')setError((e.message||'Could not reach Doge AI.')+' You can retry the answer.');updateChat(chatId,c=>({...c,messages:c.messages.filter(m=>!(m.role==='assistant'&&m.streaming&& !m.content))}))}
+  try{await streamReply(history,chatId)}catch(e){if(e.name!=='AbortError')setError((e.message||'Could not reach Doge AI.')+' You can retry the answer.');updateChat(chatId,c=>({...c,messages:c.messages.filter(m=>!(m.role==='assistant'&&m.streaming&&!m.content)).map(m=>m.streaming?{...m,streaming:false}:m)}))}
   finally{setBusy(false);setStreamingId(null);setThinkingLabel('Doge AI is thinking…')}
  }
  function regenerate(index){if(busy)return;const history=messages.slice(0,index);if(!history.length)return;const lastUser=[...history].reverse().find(m=>m.role==='user');if(!lastUser)return;updateChat(activeId,c=>({...c,messages:history}));send(lastUser.displayContent||lastUser.content,history)}
