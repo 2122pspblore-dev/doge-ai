@@ -111,9 +111,20 @@ export default {
         const prompt = String(body.prompt || "").trim().slice(0, 1200);
         const image = String(body.image || "");
         if (!prompt || !/^data:image\/(png|jpeg|webp);base64,/i.test(image) || image.length > 1400000) return json({ error: "Upload a PNG, JPG, or WebP image under 1 MB and describe the edit." }, 400);
-        const result = await env.AI.run("black-forest-labs/flux-1-kontext-pro", { prompt, input_image: image, output_format: "png" });
+        const result = await env.AI.run("black-forest-labs/flux-1-kontext-pro", { prompt, input_image: image.split(",")[1], output_format: "png" });
         if (!result?.image) return json({ error: "The image editor returned no image." }, 502);
-        const edited = typeof result.image === "string" ? result.image : btoa(String.fromCharCode(...new Uint8Array(result.image)));
+        let edited = result.image;
+        if (typeof edited === "string" && /^https?:\/\//i.test(edited)) {
+          const downloaded = await fetch(edited);
+          if (!downloaded.ok) return json({ error: "The edited image could not be retrieved." }, 502);
+          edited = new Uint8Array(await downloaded.arrayBuffer());
+        }
+        if (typeof edited !== "string") {
+          const bytes = new Uint8Array(edited);
+          let binary = "";
+          for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+          edited = btoa(binary);
+        }
         return json({ image: edited.startsWith("data:") ? edited : "data:image/png;base64," + edited });
       } catch { return json({ error: "Image editing failed. Please try again." }, 502); }
     }
