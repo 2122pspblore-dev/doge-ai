@@ -167,3 +167,25 @@ body{overflow:hidden}
   .gc-room-head small{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere}
   .gc-room-head button{font-size:10px;padding:6px}
 }
+
+
+/* Embedded DOGE AI code editor */
+.doge-editor{width:min(760px,calc(100vw - 32px));max-height:70vh;overflow:auto}
+.doge-editor-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.doge-editor-top label,.doge-ai-edit label{display:flex;align-items:center;gap:8px;color:#c9c3d0;font-size:11px}
+.doge-editor-top select{background:#211f26;border:1px solid #45404c;color:#e7e3ed;border-radius:7px;padding:7px;font:12px Inter,sans-serif}
+.doge-editor-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.doge-editor-actions button,.doge-ai-edit button{display:flex;align-items:center;gap:6px;border:1px solid #45404c;background:#292630;color:#ddd8e5;border-radius:7px;padding:7px 10px;font-size:11px;cursor:pointer}
+.doge-editor-actions button:disabled,.doge-ai-edit button:disabled{opacity:.45;cursor:default}
+.doge-editor-input{display:flex;align-items:stretch;min-height:190px;max-height:340px;overflow:auto;background:#121116;border:1px solid #3a3541;border-radius:9px}
+.doge-line-numbers{display:flex;flex-direction:column;flex-shrink:0;padding:10px 9px;text-align:right;background:#19171d;border-right:1px solid #302c35;color:#716b78;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;user-select:none}
+.doge-editor-input textarea{min-width:0;min-height:190px;max-height:none;resize:vertical;padding:10px;color:#e4dfeb;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;tab-size:2}
+.doge-run-actions{margin-top:9px}
+.doge-run-actions .v2-primary,.doge-ai-edit button{background:#e7e3ed;color:#29242e;border-color:#e7e3ed}
+.doge-output,.doge-preview-wrap{margin-top:10px;border:1px solid #3a3541;border-radius:9px;overflow:hidden;background:#121116}
+.doge-output-title{padding:7px 10px;background:#211f26;border-bottom:1px solid #393540;color:#aaa4b2;font-size:11px}
+.doge-output pre{margin:0;padding:10px;color:#d9d3df;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}
+.doge-preview-wrap iframe{display:block;width:100%;height:260px;border:0;background:#fff}
+.doge-ai-edit{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #393540}
+.doge-ai-edit textarea{width:100%;background:#17151b;border:1px solid #393540;border-radius:8px;padding:9px;color:#eee;font-size:12px;resize:vertical}
+.doge-editor-notice{margin:9px 0 0;color:#b9d4b2;font-size:11px;line-height:1.5}
