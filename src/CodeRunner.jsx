@@ -219,7 +219,7 @@ export default function CodeRunner() {
               <button onClick={() => { setCode(STARTERS[language]); setOutput(''); setPreview(''); setNotice(''); }}><RotateCcw size={13}/> Reset</button>
             </div>
           </div>
-          <p className="v2-hint">JavaScript runs in an isolated sandbox (2-second limit). Python runs locally in a sandboxed Pyodide runtime and loads from jsDelivr on first use (20-second limit). HTML opens a sandboxed preview.</p>
+          <p className="v2-hint">JavaScript runs in an isolated sandbox with no automatic time limit; use Stop if it runs too long. Python runs in a sandboxed Pyodide runtime (20-second startup/execution limit). HTML opens a sandboxed preview.</p>
           <div className="doge-editor-input">
             <div className="doge-line-numbers" aria-hidden="true">{code.split('\n').map((_, index) => <span key={index}>{index + 1}</span>)}</div>
             <textarea spellCheck="false" autoCapitalize="off" autoCorrect="off" value={code} onChange={event => setCode(event.target.value)} aria-label="Code editor" />
