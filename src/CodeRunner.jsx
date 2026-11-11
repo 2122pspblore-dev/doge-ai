@@ -29,7 +29,7 @@ export default function CodeRunner() {
   const timeoutRef = useRef(null);
 
   useEffect(() => {
-    function move(event) {
+    const openRunner = () => setOpen(true);\n    window.addEventListener('doge-ai:open-code-runner', openRunner);\n    function move(event) {
       if (!dragRef.current) return;
       const { offsetX, offsetY } = dragRef.current;
       const width = document.documentElement.clientWidth;
@@ -49,7 +49,7 @@ export default function CodeRunner() {
     return () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', stop);
-      window.removeEventListener('pointercancel', stop);
+      window.removeEventListener('pointercancel', stop);\n      window.removeEventListener('doge-ai:open-code-runner', openRunner);
     };
   }, []);
 
