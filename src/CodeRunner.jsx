@@ -139,10 +139,7 @@ export default function CodeRunner() {
     window.addEventListener('message', finish);
     document.body.appendChild(frame);
     setRunning(true);
-    timeoutRef.current = setTimeout(() => {
-      window.removeEventListener('message', finish);
-      stopRun(language === 'python' ? 'Stopped: Python startup or execution exceeded 20 seconds.' : 'Stopped: 2-second execution limit reached.');
-    }, language === 'python' ? 20000 : 2000);
+    if (language === 'python') {\n      timeoutRef.current = setTimeout(() => {\n        window.removeEventListener('message', finish);\n        stopRun('Stopped: Python startup or execution exceeded 20 seconds.');\n      }, 20000);\n    }
   }
 
   function changeLanguage(next) {
