@@ -12,11 +12,12 @@ export default function CodeRunner() {
     frame.style.display='none';
     const payload=JSON.stringify(code).replace(/</g,'\\u003c');
     frame.srcdoc='<meta http-equiv="Content-Security-Policy" content="default-src \\'none\\'; script-src \\'unsafe-inline\\' \\'unsafe-eval\\'; connect-src \\'none\\'; img-src \\'none\\'; style-src \\'none\\'"><script>try{const logs=[];console.log=(...a)=>logs.push(a.map(x=>String(x)).join(" "));const result=(new Function('+payload+'))();parent.postMessage({dogeRunner:'+JSON.stringify(id)+',out:logs.join("\\n")+(result===undefined?"":("\\n"+String(result)))||"Finished"},"*")}catch(e){parent.postMessage({dogeRunner:'+JSON.stringify(id)+',out:String(e)},"*")}<\\/script>';
-    const finish=e=>{if(e.data?.dogeRunner===id){setOutput(e.data.out);setRunning(false);window.removeEventListener('message',finish);frame.remove();}};
+    let timer;
+    const finish=e=>{if(e.data?.dogeRunner===id){clearTimeout(timer);setOutput(e.data.out);setRunning(false);window.removeEventListener('message',finish);frame.remove();}};
     window.addEventListener('message',finish);
     document.body.appendChild(frame);
     setRunning(true);
-    setTimeout(()=>{window.removeEventListener('message',finish);frame.remove();setRunning(false);setOutput('Stopped: 2-second execution limit reached.');},2000);
+    timer=setTimeout(()=>{window.removeEventListener('message',finish);frame.remove();setRunning(false);setOutput('Stopped: 2-second execution limit reached.');},2000);
   }
   return <div className="v2-code-runner">
     <button onClick={()=>setOpen(v=>!v)}>▶ Code runner</button>
