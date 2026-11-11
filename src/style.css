@@ -121,3 +121,16 @@
 .gc-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#e9e6ef;color:#242129;font-size:29px;font-weight:800}
 .gc-gate-card h1{font-size:21px;margin:5px 0 0}.gc-gate-card p{font-size:12px;line-height:1.6;color:#a19aa9;margin:0 0 6px}.gc-gate-card label{font-size:11px;color:#d4cfda}.gc-gate-card small{font-size:10px;color:#898391}.gc-gate-card>button{margin-top:7px;border:0;border-radius:8px;background:#e7e3ed;color:#29242e;padding:10px;font-weight:650;cursor:pointer}.gc-gate-card>button:disabled{opacity:.6}
 @media(max-width:650px){.gc-wrap{width:94%}.gc-panel{width:94vw;bottom:42px;left:0}.gc-content{grid-template-columns:115px 1fr;height:360px}.gc-room-head{padding:9px}.gc-room-head small{max-width:180px}.gc-list{padding:4px}.gc-list>button{gap:4px;padding:8px 4px;font-size:10px}}
+
+
+/* Layout hardening: keep the chat column full-width in wide browser windows */
+html,body,#root{width:100%;height:100%;min-width:320px;margin:0}
+body{overflow:hidden}
+.app{width:100%;min-width:0;min-height:0;overflow:hidden}
+.main{width:0;min-width:0;flex:1 1 auto;overflow:hidden}
+.main>header,.main>.v2-tools,.main>.gc-wrap,.main>.composer-wrap{flex-shrink:0}
+.conversation{width:100%;min-width:0;min-height:0;align-self:stretch;flex:1 1 auto;overflow-y:auto;overflow-x:hidden}
+.messages{width:min(760px,92%);max-width:100%;min-width:0}
+.message,.message-body,.bubble{min-width:0;overflow-wrap:anywhere}
+.v2-tools,.gc-wrap,.composer-wrap{max-width:100%}
+@media(max-width:700px){.main{width:0}.conversation{width:100%}}
