@@ -11,7 +11,7 @@ const PROMPTS = [
   'Summarize the key points'
 ];
 
-export default function DogeV2Tools({ activeChat, messages, chats, setChats, setText, setError, updateChat }) {
+export default function DogeV2Tools({ activeChat, messages, chats, setChats, setActiveId, setText, setError, updateChat }) {
   const [model, setModel] = useState(() => localStorage.getItem('doge-ai-model') || 'fast');
   const [memory, setMemory] = useState(() => localStorage.getItem('doge-ai-memory-v1') || '');
   const [searching, setSearching] = useState(false);
@@ -60,7 +60,7 @@ export default function DogeV2Tools({ activeChat, messages, chats, setChats, set
   function branchConversation() {
     if (!activeChat) return;
     const branch = { id:Date.now().toString(36)+Math.random().toString(36).slice(2,6), title:'Branch: ' + activeChat.title, messages:[...messages], updatedAt:Date.now(), pinned:false };
-    setChats(cs => [branch, ...cs]);
+    setChats(cs => [branch, ...cs]); setActiveId?.(branch.id);
   }
   function saveArtifact() {
     const content = artifactText.trim() || messages.filter(m => m.role === 'assistant').slice(-1)[0]?.content || '';
