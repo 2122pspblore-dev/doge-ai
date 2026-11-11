@@ -20,6 +20,9 @@ export default function DogeV2Tools({ activeChat, messages, chats, setChats, set
   const [imageOpen, setImageOpen] = useState(false);
   const [imagePrompt, setImagePrompt] = useState('');
   const [imageBusy, setImageBusy] = useState(false);
+  const [editImageData, setEditImageData] = useState('');
+  const [editImageName, setEditImageName] = useState('');
+  const [editMode, setEditMode] = useState(false);
   const [artifactOpen, setArtifactOpen] = useState(false);
   const [artifactText, setArtifactText] = useState('');
   const [artifacts, setArtifacts] = useState(() => { try { return JSON.parse(localStorage.getItem('doge-ai-artifacts-v1') || '[]'); } catch { return []; } });
@@ -44,6 +47,18 @@ export default function DogeV2Tools({ activeChat, messages, chats, setChats, set
       saveUsage('searches');
     } catch (e) { setError('Web search: ' + e.message); }
     finally { setSearching(false); }
+  }
+  async function editImage() {
+    if (!editImageData || !imagePrompt.trim() || imageBusy) return;
+    setImageBusy(true);
+    try {
+      const response = await fetch('/api/image/edit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt:imagePrompt.trim(),image:editImageData}) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Image editing failed');
+      updateChat(activeChat.id, c => ({...c, messages:[...c.messages, {role:'assistant', content:'Edited image: ' + imagePrompt, image:data.image}], updatedAt:Date.now()}));
+      saveUsage('images'); setImageOpen(false); setImagePrompt(''); setEditImageData(''); setEditImageName(''); setEditMode(false);
+    } catch(e) { setError(e.message); }
+    finally { setImageBusy(false); }
   }
   async function generateImage() {
     if (!imagePrompt.trim()) return;
@@ -103,7 +118,7 @@ export default function DogeV2Tools({ activeChat, messages, chats, setChats, set
       <div className="v2-stats"><b><BookOpen size={14}/> Saved artifacts</b><span>{artifacts.length} saved</span></div>
       {artifacts.slice(0,5).map(a=><button className="v2-artifact" key={a.id} onClick={()=>{setArtifactText(a.content);setArtifactOpen(true)}}>{a.title}</button>)}
     </div>}
-    {imageOpen && <div className="v2-overlay"><div className="v2-dialog"><button className="v2-close" onClick={()=>setImageOpen(false)}><X size={15}/></button><h3>Generate an image</h3><textarea rows={3} value={imagePrompt} onChange={e=>setImagePrompt(e.target.value)} placeholder="Describe the image..."/><button className="v2-primary" disabled={imageBusy||!imagePrompt.trim()} onClick={generateImage}>{imageBusy?'Generating…':'Generate image'}</button></div></div>}
+    {imageOpen && <div className="v2-overlay"><div className="v2-dialog"><button className="v2-close" onClick={()=>setImageOpen(false)}><X size={15}/></button><h3>{editMode ? "Edit an image" : "Generate an image"}</h3><div className="image-mode-tabs"><button className={!editMode?"active":""} onClick={()=>setEditMode(false)}>Generate</button><button className={editMode?"active":""} onClick={()=>setEditMode(true)}>Edit upload</button></div>{editMode&&<><input type="file" accept="image/png,image/jpeg,image/webp" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>1024*1024){setError("Image must be under 1 MB.");return}const reader=new FileReader();reader.onload=()=>{setEditImageData(String(reader.result));setEditImageName(file.name)};reader.readAsDataURL(file)}}/><small>{editImageName || "Choose a PNG, JPG, or WebP image (under 1 MB)."}</small></>}<textarea rows={3} value={imagePrompt} onChange={e=>setImagePrompt(e.target.value)} placeholder={editMode?"Describe the changes you want…":"Describe the image…"}/><button className="v2-primary" disabled={imageBusy||!imagePrompt.trim()||(editMode&&!editImageData)} onClick={editMode?editImage:generateImage}>{imageBusy?(editMode?"Editing…":"Generating…"):(editMode?"Edit image":"Generate image")}</div></div>}
     {artifactOpen && <div className="v2-overlay"><div className="v2-dialog"><button className="v2-close" onClick={()=>setArtifactOpen(false)}><X size={15}/></button><h3>Artifacts</h3><textarea rows={8} value={artifactText} onChange={e=>setArtifactText(e.target.value)} placeholder="Write or edit an artifact..."/><button className="v2-primary" onClick={saveArtifact}>Save artifact</button><div className="v2-artifact-list">{artifacts.map(a=><button key={a.id} onClick={()=>setArtifactText(a.content)}>{a.title}</button>)}</div></div></div>}
   </div>;
 }
