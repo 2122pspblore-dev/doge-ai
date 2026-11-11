@@ -86,7 +86,7 @@ export default function App(){
  }
  async function send(value=text,overrideMessages=null){
   const clean=value.trim();if((!clean&&!files.length)||busy||!activeChat)return;
-  const attached=[...files],prompt=clean+attached.map(f=>'\n\n--- Attached file: '+f.name+' ---\n'+f.content+'\n--- End of '+f.name+' ---').join('');
+  const attached=[...files],prompt=clean+attached.filter(f=>f.type!=='image').map(f=>'\n\n--- Attached file: '+f.name+' ---\n'+f.content+'\n--- End of '+f.name+' ---').join('');
   const user={role:'user',content:prompt,displayContent:clean,attachments:attached.map(f=>f.name),images:attached.filter(f=>f.type==='image').map(f=>f.content)};
   const history=overrideMessages||[...messages,user],chatId=activeChat.id;
   updateChat(chatId,c=>({...c,title:c.messages.length?c.title:(clean.slice(0,42)||attached[0]?.name||'New chat'),messages:[...history,{role:'assistant',content:'',streaming:true}],updatedAt:Date.now()}));
