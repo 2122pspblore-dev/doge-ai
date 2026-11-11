@@ -99,7 +99,9 @@ export default function CodeRunner() {
             }).join(' '));
             console.log = show; console.info = show; console.warn = show;
             const result = (new Function(${safeCode}))();
-            const output = logs.join('\\n') + (result === undefined ? '' : ('\\n' + String(result)));
+            const output = logs.join('
+') + (result === undefined ? '' : ('
+' + String(result)));
             parent.postMessage({ dogeRunner: ${safeId}, out: output || 'Finished (no output).' }, '*');
           } catch (error) {
             parent.postMessage({ dogeRunner: ${safeId}, out: String(error) }, '*');
@@ -118,7 +120,8 @@ export default function CodeRunner() {
               pyodide.setStdout({ batched: value => logs.push(value) });
               pyodide.setStderr({ batched: value => logs.push(value) });
               await pyodide.runPythonAsync(${safeCode});
-              parent.postMessage({ dogeRunner: ${safeId}, out: logs.join('\\n') || 'Finished (no output).' }, '*');
+              parent.postMessage({ dogeRunner: ${safeId}, out: logs.join('
+') || 'Finished (no output).' }, '*');
             } catch (error) {
               parent.postMessage({ dogeRunner: ${safeId}, out: String(error) }, '*');
             }
