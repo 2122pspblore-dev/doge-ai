@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import CodeRunner from './CodeRunner.jsx';
 import { Globe, Image as ImageIcon, GitBranch, BookOpen, Download, BarChart3, FilePlus2, X } from 'lucide-react';
 
 const PROMPTS = [
@@ -77,10 +78,10 @@ export default function DogeV2Tools({ activeChat, messages, chats, setChats, set
         <option value="fast">Fast model</option><option value="thinking">Thinking model</option>
       </select>
       <button onClick={searchWeb} disabled={searching}><Globe size={14}/>{searching?'Searching':'Web search'}</button>
-      <button onClick={()=>setImageOpen(true)}><ImageIcon size={14}/>Image</button>
+      <button onClick={()=>setImageOpen(true)}><ImageIcon size={14}/>Image</button><CodeRunner/>
       <button onClick={branchConversation}><GitBranch size={14}/>Branch</button>
       <button onClick={()=>{setArtifactText(messages.filter(m=>m.role==='assistant').slice(-1)[0]?.content||'');setArtifactOpen(true)}}><FilePlus2 size={14}/>Artifact</button>
-      <button onClick={exportChats}><Download size={14}/>Backup</button>
+      <select className="v2-prompt-select" aria-label="Prompt library" defaultValue="" onChange={e=>{if(e.target.value)setText(e.target.value);e.target.value="";}}><option value="">Prompt library</option>{PROMPTS.map(p=><option key={p} value={p}>{p}</option>)}</select><button onClick={exportChats}><Download size={14}/>Backup</button>
       <button onClick={()=>setSearchOpen(v=>!v)}><BarChart3 size={14}/>Settings</button>
     </div>
     {searchOpen && <div className="v2-panel">
