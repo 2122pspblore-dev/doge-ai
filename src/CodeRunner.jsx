@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Code2, Download, Play, Sparkles, Square, RotateCcw, ChevronDown } from 'lucide-react';
 
 const STARTERS = {
@@ -23,8 +23,43 @@ export default function CodeRunner() {
   const [instruction, setInstruction] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const [panelPosition, setPanelPosition] = useState(null);
+  const dragRef = useRef(null);
   const frameRef = useRef(null);
   const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    function move(event) {
+      if (!dragRef.current) return;
+      const { offsetX, offsetY } = dragRef.current;
+      const width = document.documentElement.clientWidth;
+      const height = document.documentElement.clientHeight;
+      const panel = document.querySelector('.doge-editor');
+      const panelWidth = panel?.offsetWidth || 760;
+      const panelHeight = panel?.offsetHeight || 600;
+      setPanelPosition({
+        x: Math.max(12, Math.min(width - panelWidth - 12, event.clientX - offsetX)),
+        y: Math.max(12, Math.min(height - panelHeight - 12, event.clientY - offsetY))
+      });
+    }
+    function stop() { dragRef.current = null; }
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+    return () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+    };
+  }, []);
+
+  function startDrag(event) {
+    if (event.button !== 0 || event.target.closest('button')) return;
+    const rect = event.currentTarget.parentElement.getBoundingClientRect();
+    dragRef.current = { offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
+    if (!panelPosition) setPanelPosition({ x: rect.left, y: rect.top });
+    event.preventDefault();
+  }
 
   function stopRun(message = 'Execution stopped.') {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -165,7 +200,12 @@ export default function CodeRunner() {
     <div className="v2-code-runner">
       <button onClick={() => setOpen(value => !value)}><Code2 size={14}/> Code runner <ChevronDown size={12}/></button>
       {open && (
-        <div className="v2-panel doge-editor">
+        <div className="doge-editor-overlay" onMouseDown={event => { if (event.target === event.currentTarget) setOpen(false); }}>
+        <div className="v2-panel doge-editor" style={panelPosition ? { left: panelPosition.x, top: panelPosition.y, transform: 'none' } : undefined}>
+          <div className="doge-editor-titlebar" onPointerDown={startDrag}>
+            <div className="doge-editor-window-title"><Code2 size={15}/><span>Code Runner</span><small>Drag to move</small></div>
+            <button className="doge-editor-close" onClick={() => setOpen(false)} aria-label="Close Code Runner" title="Close"><X size={17}/></button>
+          </div>
           <div className="doge-editor-top">
             <label>Language
               <select value={language} onChange={event => changeLanguage(event.target.value)}>
@@ -196,6 +236,7 @@ export default function CodeRunner() {
             <button disabled={aiBusy || !instruction.trim()} onClick={askAI}><Sparkles size={13}/>{aiBusy ? 'Editing…' : 'Apply AI edit'}</button>
           </div>
           {notice && <p className="doge-editor-notice">{notice}</p>}
+        </div>
         </div>
       )}
     </div>
