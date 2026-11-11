@@ -2,25 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Code2, Download, Play, Sparkles, Square, RotateCcw, ChevronDown, X } from 'lucide-react';
 
 const STARTERS = {
-  javascript: 'console.log("Hello from DOGE AI!");
-
-const answer = 6 * 7;
-console.log("The answer is", answer);',
-  python: 'print("Hello from DOGE AI!")
-
-answer = 6 * 7
-print("The answer is", answer)',
-  html: '<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>My page</title>
-</head>
-<body>
-  <h1>Hello, DOGE AI!</h1>
-  <p>Edit this HTML and press Run.</p>
-</body>
-</html>'
+  javascript: 'console.log("Hello from DOGE AI!");\n\nconst answer = 6 * 7;\nconsole.log("The answer is", answer);',
+  python: 'print("Hello from DOGE AI!")\n\nanswer = 6 * 7\nprint("The answer is", answer)',
+  html: '<!doctype html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <title>My page</title>\n</head>\n<body>\n  <h1>Hello, DOGE AI!</h1>\n  <p>Edit this HTML and press Run.</p>\n</body>\n</html>'
 };
 const EXTENSIONS = { javascript: 'js', python: 'py', html: 'html' };
 
@@ -118,9 +102,7 @@ export default function CodeRunner() {
             }).join(' '));
             console.log = show; console.info = show; console.warn = show;
             const result = (new Function(${safeCode}))();
-            const output = logs.join('
-') + (result === undefined ? '' : ('
-' + String(result)));
+            const output = logs.join('\\n') + (result === undefined ? '' : ('\\n' + String(result)));
             parent.postMessage({ dogeRunner: ${safeId}, out: output || 'Finished (no output).' }, '*');
           } catch (error) {
             parent.postMessage({ dogeRunner: ${safeId}, out: String(error) }, '*');
@@ -139,8 +121,7 @@ export default function CodeRunner() {
               pyodide.setStdout({ batched: value => logs.push(value) });
               pyodide.setStderr({ batched: value => logs.push(value) });
               await pyodide.runPythonAsync(${safeCode});
-              parent.postMessage({ dogeRunner: ${safeId}, out: logs.join('
-') || 'Finished (no output).' }, '*');
+              parent.postMessage({ dogeRunner: ${safeId}, out: logs.join('\\n') || 'Finished (no output).' }, '*');
             } catch (error) {
               parent.postMessage({ dogeRunner: ${safeId}, out: String(error) }, '*');
             }
@@ -198,15 +179,7 @@ export default function CodeRunner() {
         body: JSON.stringify({
           model: localStorage.getItem('doge-ai-model') || 'fast',
           messages: [
-            { role: 'user', content: 'You are editing code in the DOGE AI editor. Make only the requested changes, preserve existing behavior and unrelated code, and do not invent APIs or claim you tested it. Return the complete updated file in exactly one fenced code block using the ' + language + ' language. If the requested change is unsafe or impossible, explain briefly instead of fabricating code.
-
-Requested change:
-' + instruction.trim() + '
-
-Current file:
-```' + language + '
-' + code + '
-```' }
+            { role: 'user', content: 'You are editing code in the DOGE AI editor. Make only the requested changes, preserve existing behavior and unrelated code, and do not invent APIs or claim you tested it. Return the complete updated file in exactly one fenced code block using the ' + language + ' language. If the requested change is unsafe or impossible, explain briefly instead of fabricating code.\n\nRequested change:\n' + instruction.trim() + '\n\nCurrent file:\n```' + language + '\n' + code + '\n```' }
           ]
         })
       });
@@ -253,8 +226,7 @@ Current file:
           </div>
           <p className="v2-hint">JavaScript runs in an isolated sandbox with no automatic time limit; use Stop if it runs too long. Python runs in a sandboxed Pyodide runtime (20-second startup/execution limit). HTML opens a sandboxed preview.</p>
           <div className="doge-editor-input">
-            <div className="doge-line-numbers" aria-hidden="true">{code.split('
-').map((_, index) => <span key={index}>{index + 1}</span>)}</div>
+            <div className="doge-line-numbers" aria-hidden="true">{code.split('\n').map((_, index) => <span key={index}>{index + 1}</span>)}</div>
             <textarea spellCheck="false" autoCapitalize="off" autoCorrect="off" value={code} onChange={event => setCode(event.target.value)} aria-label="Code editor" />
           </div>
           <div className="doge-editor-actions doge-run-actions">
