@@ -55,7 +55,7 @@ export default function GroupChats() {
 
   async function register(e) {
     e.preventDefault(); setBusy(true); setError('');
-    try { const data=await api('/api/users/register',{method:'POST',body:JSON.stringify({username})}); setUser(data.user); }
+    try { const data=await api('/api/users/register',{method:'POST',body:JSON.stringify({username})}); setUser(data.user); localStorage.setItem('doge-ai-profile-v1',JSON.stringify(data.user)); window.dispatchEvent(new Event('doge-ai-profile-updated')); }
     catch(e) { setError(e.message); }
     finally { setBusy(false); }
   }
