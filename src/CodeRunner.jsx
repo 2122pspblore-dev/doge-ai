@@ -27,7 +27,7 @@ export default function CodeRunner() {
         } catch (error) {
           parent.postMessage({ dogeRunner: ${safeId}, out: String(error) }, '*');
         }
-      <\\/script>
+      <\/script>
     `;
 
     let timer;
