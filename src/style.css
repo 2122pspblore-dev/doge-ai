@@ -91,3 +91,33 @@
 .v2-prompt-select{max-width:125px;min-width:95px;overflow:hidden}
 .v2-hint{font-size:11px;line-height:1.5;color:#9b95a3}
 .v2-run-output{max-height:180px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;border:1px solid #393540;border-radius:8px;background:#151419;color:#d8cde2;font:12px/1.5 ui-monospace,monospace}
+
+
+/* Device profiles and shared group conversations */
+.gc-wrap{width:min(760px,92%);margin:0 auto 8px;position:relative;z-index:4}
+.gc-launch,.gc-head button,.gc-room-head button,.gc-compose button{display:inline-flex;align-items:center;gap:7px;border:1px solid #37333d;background:#1c1a20;color:#c9c3d0;border-radius:8px;padding:7px 10px;font:11px Inter,sans-serif;cursor:pointer}
+.gc-launch span{background:#34303a;border-radius:20px;padding:1px 6px}
+.gc-panel{position:absolute;bottom:42px;left:0;width:min(690px,95vw);max-height:min(570px,75vh);background:#1c1a20;border:1px solid #403a49;border-radius:13px;box-shadow:0 18px 65px #000b;overflow:hidden}
+.gc-head,.gc-room-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border-bottom:1px solid #34303b}
+.gc-head>div:first-child,.gc-room-head>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.gc-head b,.gc-room-head b{font-size:12px;color:#eee}.gc-head small,.gc-room-head small{font-size:10px;color:#938d9b;overflow-wrap:anywhere}
+.gc-head>div:last-child{display:flex;gap:5px}
+.gc-head button{padding:6px}
+.gc-content{display:grid;grid-template-columns:190px 1fr;height:390px;min-height:260px}
+.gc-list{overflow:auto;border-right:1px solid #34303b;padding:7px}
+.gc-list>button{width:100%;display:flex;align-items:center;gap:7px;border:0;background:transparent;color:#c9c3d0;border-radius:7px;padding:9px 7px;text-align:left;font-size:11px;cursor:pointer}
+.gc-list>button.active,.gc-list>button:hover{background:#302b36}
+.gc-list>button span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gc-list>button small{color:#8e8796}
+.gc-room{display:flex;flex-direction:column;min-width:0;min-height:0}
+.gc-room-head{align-items:flex-start}.gc-room-head button{flex-shrink:0}
+.gc-messages{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.gc-message{max-width:90%;align-self:flex-start;background:#292630;border-radius:10px;padding:8px 10px;font-size:11px;color:#e1dce8;overflow-wrap:anywhere}
+.gc-message.mine{align-self:flex-end;background:#393044}.gc-message b{font-size:10px;color:#b9a8cd}.gc-message p{margin:4px 0 0;white-space:pre-wrap;line-height:1.5}
+.gc-compose{display:flex;gap:7px;padding:9px;border-top:1px solid #34303b}.gc-compose input,.gc-gate-card input{flex:1;min-width:0;background:#151419;border:1px solid #403a49;border-radius:8px;color:#eee;padding:9px;font:12px Inter,sans-serif;outline:none}.gc-compose input:focus,.gc-gate-card input:focus{border-color:#77658a}.gc-compose button{justify-content:center;padding:8px}.gc-compose button:disabled{opacity:.4;cursor:default}
+.gc-empty{color:#8f8996;font-size:11px;line-height:1.5;padding:12px}.gc-center{margin:auto;text-align:center}
+.gc-error{color:#f0a3a3;font-size:11px;padding:7px 10px}.gc-notice{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #39333e}.gc-notice button{border:0;background:transparent;color:#c9c3d0}
+.gc-gate{position:fixed;inset:0;z-index:100;background:#111114;display:grid;place-items:center;padding:20px}
+.gc-gate-card{width:min(390px,100%);background:#1c1a20;border:1px solid #403a49;border-radius:16px;padding:25px;box-shadow:0 20px 90px #0009;display:flex;flex-direction:column;gap:10px}
+.gc-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#e9e6ef;color:#242129;font-size:29px;font-weight:800}
+.gc-gate-card h1{font-size:21px;margin:5px 0 0}.gc-gate-card p{font-size:12px;line-height:1.6;color:#a19aa9;margin:0 0 6px}.gc-gate-card label{font-size:11px;color:#d4cfda}.gc-gate-card small{font-size:10px;color:#898391}.gc-gate-card>button{margin-top:7px;border:0;border-radius:8px;background:#e7e3ed;color:#29242e;padding:10px;font-weight:650;cursor:pointer}.gc-gate-card>button:disabled{opacity:.6}
+@media(max-width:650px){.gc-wrap{width:94%}.gc-panel{width:94vw;bottom:42px;left:0}.gc-content{grid-template-columns:115px 1fr;height:360px}.gc-room-head{padding:9px}.gc-room-head small{max-width:180px}.gc-list{padding:4px}.gc-list>button{gap:4px;padding:8px 4px;font-size:10px}}
