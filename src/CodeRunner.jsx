@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Code2, Download, Play, Sparkles, Square, RotateCcw, ChevronDown } from 'lucide-react';
+import { Code2, Download, Play, Sparkles, Square, RotateCcw, ChevronDown, X } from 'lucide-react';
 
 const STARTERS = {
   javascript: 'console.log("Hello from DOGE AI!");\n\nconst answer = 6 * 7;\nconsole.log("The answer is", answer);',
