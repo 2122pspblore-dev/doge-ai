@@ -71,7 +71,7 @@ export default function App(){
   for(let attempt=0;attempt<3;attempt++){
    const controller=new AbortController();abortRef.current=controller;
    try{
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history,advanced,personality,profile:deviceProfile,memory:localStorage.getItem('doge-ai-memory-v1')||'',stream:true}),signal:controller.signal});
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history,advanced,personality,profile:deviceProfile,model:localStorage.getItem('doge-ai-model')||'fast',memory:localStorage.getItem('doge-ai-memory-v1')||'',stream:true}),signal:controller.signal});
     if(!res.ok){const p=await res.json().catch(()=>({}));const er=new Error(p.error||'Request failed');er.status=res.status;throw er}
     if(!res.body)throw new Error('Streaming is unavailable.');
     const reader=res.body.getReader(),decoder=new TextDecoder();let buffer='',answer='',received=false;
