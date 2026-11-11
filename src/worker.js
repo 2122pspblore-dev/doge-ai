@@ -103,6 +103,21 @@ export default {
       } catch { return json({ error: "Image generation failed. Please try again." }, 502); }
     }
 
+    if (url.pathname === "/api/image/edit") {
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+      if (!env.AI) return json({ error: "Workers AI is not connected." }, 503);
+      try {
+        const body = await request.json();
+        const prompt = String(body.prompt || "").trim().slice(0, 1200);
+        const image = String(body.image || "");
+        if (!prompt || !/^data:image\/(png|jpeg|webp);base64,/i.test(image) || image.length > 1400000) return json({ error: "Upload a PNG, JPG, or WebP image under 1 MB and describe the edit." }, 400);
+        const result = await env.AI.run("black-forest-labs/flux-1-kontext-pro", { prompt, input_image: image, output_format: "png" });
+        if (!result?.image) return json({ error: "The image editor returned no image." }, 502);
+        const edited = typeof result.image === "string" ? result.image : btoa(String.fromCharCode(...new Uint8Array(result.image)));
+        return json({ image: edited.startsWith("data:") ? edited : "data:image/png;base64," + edited });
+      } catch { return json({ error: "Image editing failed. Please try again." }, 502); }
+    }
+
     if (url.pathname === "/api/search") {
       if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
       const query = (url.searchParams.get("q") || "").trim();
