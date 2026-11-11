@@ -38,7 +38,7 @@ export default {
             } catch (error) { if (attempt === 2) return json({ error: "Doge AI couldn't start a response. Please try again." }, 502); await new Promise(r => setTimeout(r, 350 * (attempt + 1))); }
           }
         }
-        const result = await env.AI.run(model, { messages, max_tokens: 1800, temperature: body.advanced ? 0.8 : 0.6 });
+        const result = await env.AI.run(model, { messages, max_tokens: 1800, temperature: body.advanced ? 0.5 : 0.35 });
         const reply = result?.choices?.[0]?.message?.content ?? result?.response ?? result?.result?.response;
         if (typeof reply !== "string" || !reply.trim()) return json({ error: "The model returned an empty answer." }, 502);
         return json({ reply });
