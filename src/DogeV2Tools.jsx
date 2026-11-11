@@ -68,7 +68,17 @@ export default function DogeV2Tools({ activeChat, messages, chats, setChats, set
     const next = [{id:Date.now(), title:'Artifact ' + new Date().toLocaleString(), content}, ...artifacts];
     setArtifacts(next); localStorage.setItem('doge-ai-artifacts-v1', JSON.stringify(next)); setArtifactText('');
   }
-  function exportCurrentChat() {\n    const body = '# ' + (activeChat?.title || 'Doge AI chat') + '\\n\\n' + messages.map(m => (m.role === 'user' ? '**You**' : '**Doge AI**') + '\\n\\n' + (m.content || '')).join('\\n\\n---\\n\\n');\n    const blob = new Blob([body], {type:'text/markdown'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='doge-ai-chat.md'; a.click(); URL.revokeObjectURL(a.href);\n  }\n  function exportChats() {
+  function exportCurrentChat() {
+    const body = '# ' + (activeChat?.title || 'Doge AI chat') + '\n\n' +
+      messages.map(m => (m.role === 'user' ? '**You**' : '**Doge AI**') + '\n\n' + (m.content || '')).join('\n\n---\n\n');
+    const blob = new Blob([body], { type: 'text/markdown' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'doge-ai-chat.md';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  function exportChats() {
     const blob = new Blob([JSON.stringify(chats, null, 2)], {type:'application/json'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'doge-ai-backup.json'; a.click(); URL.revokeObjectURL(a.href);
   }
