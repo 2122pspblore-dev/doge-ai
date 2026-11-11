@@ -39,19 +39,32 @@ export default {
           }))
         ];
 
-        const result = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
-          messages,
-          max_tokens: 1200,
-          temperature: body.advanced ? 0.8 : 0.6
-        });
+        let reply = "";
+        let lastModelError = null;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const result = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
+              messages,
+              max_tokens: 1200,
+              temperature: body.advanced ? 0.8 : 0.6
+            });
+            const candidate =
+              result?.choices?.[0]?.message?.content ??
+              result?.response ??
+              result?.result?.response;
+            if (typeof candidate === "string" && candidate.trim()) {
+              reply = candidate.trim();
+              break;
+            }
+            lastModelError = new Error("The model returned an empty response.");
+          } catch (error) {
+            lastModelError = error;
+          }
+          if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+        }
 
-        const reply =
-          result?.choices?.[0]?.message?.content ??
-          result?.response ??
-          result?.result?.response;
-
-        if (typeof reply !== "string" || !reply.trim()) {
-          return Response.json({ error: "The AI model returned an empty response. Please try again." }, { status: 502 });
+        if (!reply) {
+          return Response.json({ error: "Doge AI couldn't generate an answer after a few tries. Please try again." }, { status: 502 });
         }
 
         return Response.json({ reply });
