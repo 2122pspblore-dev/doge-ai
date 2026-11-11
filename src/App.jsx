@@ -91,7 +91,7 @@ export default function App(){
          const payload=await response.json().catch(()=>({}));
          if(!response.ok){
            const failure=new Error(payload.error||'Request failed');
-           if(response.status<500&&response.status!==429)throw failure;
+           failure.status=response.status;
            throw failure;
          }
          if(typeof payload.reply!=='string'||!payload.reply.trim())throw new Error('The AI returned an empty answer.');
@@ -99,7 +99,7 @@ export default function App(){
          break;
        }catch(err){
          lastError=err;
-         if(attempt===2)break;
+         if((err.status&&err.status<500&&err.status!==429)||attempt===2)break;
          setThinkingLabel('That response failed. Retrying…');
          await new Promise(resolve=>setTimeout(resolve,600*(attempt+1)));
        }
