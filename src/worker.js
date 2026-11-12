@@ -42,7 +42,7 @@ const runTextModel = async (env, cloudflareModel, options) => {
   }
 
   // Gemini is the first automatic backup. Store its key as a Worker secret.
-  if (env.GEMINI_API_KEY) {
+  if (env.GEMINI_API_KEY && !options.skipGemini) {
     try {
       const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
       const system = options.messages.find(message => message.role === "system")?.content;
@@ -74,6 +74,28 @@ const runTextModel = async (env, cloudflareModel, options) => {
       return { provider: "gemini", result: { choices: [{ message: { content: text } }] } };
     } catch (error) {
       failures.push("Gemini: " + String(error?.message || error));
+    }
+  }
+
+  // Groq is an optional OpenAI-compatible fallback after Gemini.
+  if (env.GROQ_API_KEY && !options.skipGroq) {
+    try {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + env.GROQ_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: env.GROQ_MODEL || "llama-3.3-70b-versatile",
+          messages: options.messages,
+          max_tokens: options.max_tokens || 1800,
+          temperature: options.temperature ?? 0.35,
+          stream: Boolean(options.stream)
+        })
+      });
+      if (!response.ok) throw new Error("Groq returned HTTP " + response.status + ": " + (await response.text()).slice(0, 300));
+      if (options.stream) return { provider: "groq", response };
+      return { provider: "groq", result: await response.json() };
+    } catch (error) {
+      failures.push("Groq: " + String(error?.message || error));
     }
   }
 
@@ -157,7 +179,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/chat") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-      if (!env.AI && !env.GEMINI_API_KEY && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
+      if (!env.AI && !env.GEMINI_API_KEY && !env.GROQ_API_KEY && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
       try {
         const body = await request.json();
         if (!Array.isArray(body.messages) || body.messages.length < 1 || body.messages.length > 40) return json({ error: "Send between 1 and 40 messages." }, 400);
@@ -193,10 +215,23 @@ export default {
         let result = output.result;
         let reply = result?.choices?.[0]?.message?.content ?? result?.response ?? result?.result?.response;
         // Reject leaked internal notes and clearly malformed generations, then try the backup provider.
-        if (!hasImages && isBadModelOutput(reply) && output.provider === "cloudflare" && env.GEMINI_API_KEY) {
-          output = await runTextModel(env, model, { ...modelOptions, skipCloudflare: true });
-          result = output.result;
-          reply = result?.choices?.[0]?.message?.content ?? result?.response ?? result?.result?.response;
+        if (!hasImages && isBadModelOutput(reply)) {
+          const fallbackOptions = {
+            ...modelOptions,
+            skipCloudflare: true,
+            skipGemini: output.provider === "gemini" || output.provider === "groq",
+            skipGroq: output.provider === "groq"
+          };
+          if (output.provider === "cloudflare" && env.GEMINI_API_KEY) {
+            output = await runTextModel(env, model, { ...modelOptions, skipCloudflare: true });
+            result = output.result;
+            reply = result?.choices?.[0]?.message?.content ?? result?.response ?? result?.result?.response;
+          }
+          if (isBadModelOutput(reply) && (output.provider === "gemini" || output.provider === "cloudflare") && env.GROQ_API_KEY) {
+            output = await runTextModel(env, model, { ...fallbackOptions, skipGemini: true });
+            result = output.result;
+            reply = result?.choices?.[0]?.message?.content ?? result?.response ?? result?.result?.response;
+          }
         }
         if (typeof reply !== "string" || isBadModelOutput(reply)) {
           return json({ error: "DOGE AI received a malformed model response. Please try again; the backup provider could not produce a clean answer." }, 502);
