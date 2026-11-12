@@ -218,6 +218,7 @@ export default {
           Professional: "Use a clear, professional and neutral tone."
         };
         const memory = typeof body.memory === "string" ? body.memory.slice(0, 3000) : "";
+        const selectedProvider = ["gemini","groq","openrouter"].includes(body.model) ? body.model : "cloudflare";
         const requestedModel = body.model === "auto" ? chooseAutomaticModel(body.messages) : (body.model === "thinking" ? "thinking" : "fast");
         const profile = body.profile && typeof body.profile.username === "string" ? body.profile.username.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20) : "";
         const hasImages = body.messages.some(m => Array.isArray(m.images) && m.images.length > 0);
@@ -236,7 +237,7 @@ export default {
         if (hasImages) {
           output = { provider: "cloudflare", result: await env.AI.run(model, { messages, max_tokens: 1800, temperature: body.advanced ? 0.5 : 0.35, stream: false }) };
         } else {
-          const modelOptions = { messages, max_tokens: requestedModel === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: false, handoffPersonality: body.personality };
+          const modelOptions = { messages, max_tokens: requestedModel === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: false, handoffPersonality: body.personality, skipCloudflare: selectedProvider !== "cloudflare", skipGemini: selectedProvider === "groq" || selectedProvider === "openrouter", skipGroq: selectedProvider === "openrouter" };
           output = await runTextModel(env, model, modelOptions);
         }
         let result = output.result;
