@@ -4,10 +4,10 @@ const CHAT_MODELS = {
 };
 
 const chooseAutomaticModel = messages => {
-  const recent = (messages || []).slice(-6).map(message => String(message.content || "")).join("\\n");
+  const recent = (messages || []).slice(-6).map(message => String(message.content || "")).join("\n");
   const text = recent.toLowerCase();
-  const codeSignals = /\\b(code|debug|program|function|javascript|typescript|python|html|css|sql|api|repository|repo|bug|stack trace|compile|refactor|implement|algorithm)\\b/.test(text);
-  const reasoningSignals = /\\b(step by step|compare|analyze|prove|derive|calculate|multi.?step|architecture|design|trade.?off|why does|root cause|math|equation)\\b/.test(text);
+  const codeSignals = /\b(code|debug|program|function|javascript|typescript|python|html|css|sql|api|repository|repo|bug|stack trace|compile|refactor|implement|algorithm)\b/.test(text);
+  const reasoningSignals = /\b(step by step|compare|analyze|prove|derive|calculate|multi.?step|architecture|design|trade.?off|why does|root cause|math|equation)\b/.test(text);
   const longTask = recent.length > 1800;
   return codeSignals || reasoningSignals || longTask ? "thinking" : "fast";
 };
