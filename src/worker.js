@@ -117,7 +117,7 @@ export default {
 
     if (url.pathname === "/api/cowork") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-      if (!env.AI) return json({ error: "Workers AI is not connected." }, 503);
+      if (!env.AI && !env.OPENROUTER_API_KEY) return json({ error: "DOGE AI has no model provider configured." }, 503);
       try {
         const body = await request.json();
         const task = String(body.task || "").trim().slice(0, 1800);
