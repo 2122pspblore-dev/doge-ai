@@ -16,6 +16,7 @@ function extractCode(text) {
 export default function CodeRunner() {
   const [open, setOpen] = useState(false);
   const [language, setLanguage] = useState('javascript');
+  const [codeModel, setCodeModel] = useState(() => localStorage.getItem('doge-ai-code-model') || 'thinking');
   const [code, setCode] = useState(STARTERS.javascript);
   const [output, setOutput] = useState('');
   const [running, setRunning] = useState(false);
@@ -177,7 +178,7 @@ export default function CodeRunner() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: localStorage.getItem('doge-ai-model') || 'fast',
+          model: codeModel,
           messages: [
             { role: 'user', content: 'You are editing code in the DOGE AI editor. Make only the requested changes, preserve existing behavior and unrelated code, and do not invent APIs or claim you tested it. Return the complete updated file in exactly one fenced code block using the ' + language + ' language. If the requested change is unsafe or impossible, explain briefly instead of fabricating code.\n\nRequested change:\n' + instruction.trim() + '\n\nCurrent file:\n```' + language + '\n' + code + '\n```' }
           ]
@@ -212,6 +213,12 @@ export default function CodeRunner() {
             <button className="doge-editor-close" onClick={() => setOpen(false)} aria-label="Close Code Runner" title="Close"><X size={17}/></button>
           </div>
           <div className="doge-editor-top">
+            <label>AI model for code edits
+              <select value={codeModel} onChange={event => { setCodeModel(event.target.value); localStorage.setItem('doge-ai-code-model', event.target.value); }}>
+                <option value="fast">Fast model</option>
+                <option value="thinking">Thinking model</option>
+              </select>
+            </label>
             <label>Language
               <select value={language} onChange={event => changeLanguage(event.target.value)}>
                 <option value="javascript">JavaScript</option>
