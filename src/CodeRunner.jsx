@@ -177,8 +177,8 @@ export default function CodeRunner() {
     const selected = Array.from(event.target.files || []);
     const next = [];
     for (const file of selected) {
-      if (file.size > 150 * 1024) { setNotice(file.name + ' is too large (150 KB max per context file).'); continue; }
-      try { next.push({ name: file.name, content: (await file.text()).slice(0, 150000) }); }
+      if (file.size > 8 * 1024) { setNotice(file.name + ' is too large (8 KB max per context file).'); continue; }
+      try { next.push({ name: file.name, content: (await file.text()).slice(0, 8000) }); }
       catch { setNotice('Could not read ' + file.name + '.'); }
     }
     setProjectFiles(current => [...current, ...next].slice(0, 8));
