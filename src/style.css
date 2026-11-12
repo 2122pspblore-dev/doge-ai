@@ -259,3 +259,15 @@ body{overflow:hidden}
 
 
 .gc-room-actions{display:flex;justify-content:flex-end;padding:7px 0}.gc-room-actions button{display:inline-flex;align-items:center;gap:7px;border:1px solid #62516f;background:#30283a;color:#eee4f7;border-radius:8px;padding:7px 10px;font-size:11px;cursor:pointer}.gc-room-actions button:disabled{opacity:.55;cursor:default}.gc-message.gc-ai{border:1px solid #66527a;background:#27212f}.gc-message.gc-ai b{color:#d8b8ff}
+
+
+/* Provider handoff status and in-app guide */
+.provider-indicator{display:inline-flex;align-items:center;margin-left:9px;padding:3px 7px;border:1px solid #494052;border-radius:999px;color:#b9a8cd;font-size:9px;font-weight:500;vertical-align:middle;white-space:nowrap}
+.help-modal{width:min(620px,calc(100vw - 28px));max-height:min(82vh,760px);overflow:auto}
+.help-modal section{padding:10px 0;border-bottom:1px solid #393540}
+.help-modal section h3{margin:0 0 5px;color:#e5dced;font-size:12px}
+.help-modal section p,.help-foot{margin:0;color:#aaa3b1;font-size:11px;line-height:1.6}
+.help-foot{margin-top:12px}
+:root[data-theme="light"] .help-modal section h3{color:#342d3d}
+:root[data-theme="light"] .help-modal section p,:root[data-theme="light"] .help-foot{color:#625a6b}
+@media(max-width:700px){.provider-indicator{font-size:8px;margin-left:5px}.help-modal{max-height:86vh}}
