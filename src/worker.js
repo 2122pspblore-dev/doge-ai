@@ -9,7 +9,7 @@ const isBadModelOutput = value => {
   if (text.length < 2 || text.length > 24000) return true;
   if (/^(?:analysis|internal reasoning|chain of thought|assistant notes)\s*:/i.test(text)) return true;
   if (/the user wants to know|the assistant should respond|model editable context|hidden system prompt|developer instructions/i.test(text)) return true;
-  if (/(?:DOG\\s+){3,}AI/i.test(text) || /(?:bro\\s+){3,}/i.test(text)) return true;
+  if (/(?:DOG\s+){3,}AI/i.test(text) || /(?:bro\\s+){3,}/i.test(text)) return true;
   const words = text.toLowerCase().match(/[a-z0-9']+/g) || [];
   if (words.length >= 7 && new Set(words).size / words.length < 0.32) return true;
   return false;
