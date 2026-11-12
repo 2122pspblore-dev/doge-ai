@@ -54,7 +54,7 @@ const runTextModel = async (env, cloudflareModel, options) => {
     try {
       // Don't let a slow Workers AI response stall the backup provider indefinitely.
       const result = await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error("Cloudflare AI timed out after 6 seconds")), 6000);
+        const timer = setTimeout(() => reject(new Error("Cloudflare AI timed out after 40 seconds")), 40000);
         Promise.resolve(env.AI.run(cloudflareModel, options)).then(
           value => { clearTimeout(timer); resolve(value); },
           error => { clearTimeout(timer); reject(error); }
