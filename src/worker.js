@@ -24,10 +24,10 @@ const isBadModelOutput = value => {
   return false;
 };
 
-const textEventStream = (reply, provider = "cloudflare", switched = false) => new Response(new ReadableStream({
+const textEventStream = (reply, provider = "cloudflare", switched = false, model = "fast") => new Response(new ReadableStream({
   start(controller) {
     const encoder = new TextEncoder();
-    controller.enqueue(encoder.encode("data: " + JSON.stringify({ meta: { provider, switched } }) + "\n\n"));
+    controller.enqueue(encoder.encode("data: " + JSON.stringify({ meta: { provider, switched, model } }) + "\n\n"));
     controller.enqueue(encoder.encode("data: " + JSON.stringify({ response: reply }) + "\n\n"));
     controller.close();
   }
@@ -262,7 +262,7 @@ export default {
         if (typeof reply !== "string" || isBadModelOutput(reply)) {
           return json({ error: "DOGE AI received a malformed model response. Please try again; the backup provider could not produce a clean answer." }, 502);
         }
-        if (body.stream) return textEventStream(reply, output.provider, output.provider !== "cloudflare");
+        if (body.stream) return textEventStream(reply, output.provider, output.provider !== "cloudflare", requestedModel);
         return json({ reply, provider: output.provider, switched: output.provider !== "cloudflare", model: requestedModel });
       } catch (error) {
         const limited = /429|quota|rate.?limit|capacity|neurons|exceeded/i.test(String(error?.message || error));
