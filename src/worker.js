@@ -18,6 +18,7 @@ const isBadModelOutput = value => {
 const textEventStream = (reply, provider = "cloudflare", switched = false) => new Response(new ReadableStream({
   start(controller) {
     const encoder = new TextEncoder();
+    controller.enqueue(encoder.encode("data: " + JSON.stringify({ meta: { provider, switched } }) + "\n\n"));
     controller.enqueue(encoder.encode("data: " + JSON.stringify({ response: reply }) + "\n\n"));
     controller.close();
   }
@@ -28,13 +29,13 @@ const providerHandoffMessages = options => {
   const recent = messages.filter(message => message.role === "user" || message.role === "assistant").slice(-8);
   const recap = recent.map(message => {
     const raw = typeof message.content === "string" ? message.content : Array.isArray(message.content) ? message.content.map(part => part.text || (part.type === "image" ? "[image]" : "")).join(" ") : "";
-    const clipped = String(raw).replace(/\\s+/g, " ").trim().slice(0, 650);
+    const clipped = String(raw).replace(/\s+/g, " ").trim().slice(0, 650);
     return (message.role === "assistant" ? "DOGE AI: " : "User: ") + clipped;
-  }).filter(line => line.length > 7).join("\\n");
+  }).filter(line => line.length > 7).join("\n");
   const style = String(options.handoffPersonality || "Friendly").slice(0, 32);
-  const handoff = "PROVIDER HANDOFF: You are continuing the same DOGE AI conversation after an automatic provider switch. Keep DOGE AI as your identity. Preserve the established response style (" + style + "); match the previous assistant's level of formality, warmth, directness, and formatting rather than announcing a new personality. The full conversation is included below; this compact recap is an extra continuity aid, not a replacement for reading it.\\nRECENT CONTEXT:\\n" + (recap || "No earlier turns are available.");
+  const handoff = "PROVIDER HANDOFF: You are continuing the same DOGE AI conversation after an automatic provider switch. Keep DOGE AI as your identity. Preserve the established response style (" + style + "); match the previous assistant's level of formality, warmth, directness, and formatting rather than announcing a new personality. The full conversation is included below; this compact recap is an extra continuity aid, not a replacement for reading it.\nRECENT CONTEXT:\n" + (recap || "No earlier turns are available.");
   return messages.map((message, index) => index === 0 && message.role === "system"
-    ? { ...message, content: String(message.content || "") + "\\n\\n" + handoff }
+    ? { ...message, content: String(message.content || "") + "\n\n" + handoff }
     : message);
 };
 
