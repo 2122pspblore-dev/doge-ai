@@ -46,6 +46,7 @@ export default function GroupChats() {
     api('/api/users/me').then(data=>setUser(data.user)).catch(e=>setError(e.message)).finally(()=>setLoadingUser(false));
   }, [api]);
   useEffect(() => { if(user) loadGroups(); }, [user,loadGroups]);
+  useEffect(() => { const handler=()=>setOpen(true); window.addEventListener('doge-ai:open-groups',handler); return ()=>window.removeEventListener('doge-ai:open-groups',handler); }, []);
   useEffect(() => {
     if (!selected) return;
     loadRoom(selected.id);

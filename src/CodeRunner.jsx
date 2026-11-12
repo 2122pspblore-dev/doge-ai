@@ -29,6 +29,8 @@ export default function CodeRunner() {
   const timeoutRef = useRef(null);
 
   useEffect(() => {
+    const openRunner = () => setOpen(true);
+    window.addEventListener('doge-ai:open-code-runner', openRunner);
     function move(event) {
       if (!dragRef.current) return;
       const { offsetX, offsetY } = dragRef.current;
@@ -50,6 +52,7 @@ export default function CodeRunner() {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', stop);
       window.removeEventListener('pointercancel', stop);
+      window.removeEventListener('doge-ai:open-code-runner', openRunner);
     };
   }, []);
 
@@ -139,10 +142,12 @@ export default function CodeRunner() {
     window.addEventListener('message', finish);
     document.body.appendChild(frame);
     setRunning(true);
-    timeoutRef.current = setTimeout(() => {
-      window.removeEventListener('message', finish);
-      stopRun(language === 'python' ? 'Stopped: Python startup or execution exceeded 20 seconds.' : 'Stopped: 2-second execution limit reached.');
-    }, language === 'python' ? 20000 : 2000);
+    if (language === 'python') {
+      timeoutRef.current = setTimeout(() => {
+        window.removeEventListener('message', finish);
+        stopRun('Stopped: Python startup or execution exceeded 20 seconds.');
+      }, 20000);
+    }
   }
 
   function changeLanguage(next) {
@@ -219,7 +224,7 @@ export default function CodeRunner() {
               <button onClick={() => { setCode(STARTERS[language]); setOutput(''); setPreview(''); setNotice(''); }}><RotateCcw size={13}/> Reset</button>
             </div>
           </div>
-          <p className="v2-hint">JavaScript runs in an isolated sandbox (2-second limit). Python runs locally in a sandboxed Pyodide runtime and loads from jsDelivr on first use (20-second limit). HTML opens a sandboxed preview.</p>
+          <p className="v2-hint">JavaScript runs in an isolated sandbox with no automatic time limit; use Stop if it runs too long. Python runs in a sandboxed Pyodide runtime (20-second startup/execution limit). HTML opens a sandboxed preview.</p>
           <div className="doge-editor-input">
             <div className="doge-line-numbers" aria-hidden="true">{code.split('\n').map((_, index) => <span key={index}>{index + 1}</span>)}</div>
             <textarea spellCheck="false" autoCapitalize="off" autoCorrect="off" value={code} onChange={event => setCode(event.target.value)} aria-label="Code editor" />
