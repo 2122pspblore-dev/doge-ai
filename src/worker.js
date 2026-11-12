@@ -253,8 +253,8 @@ export default {
         if (typeof reply !== "string" || isBadModelOutput(reply)) {
           return json({ error: "DOGE AI received a malformed model response. Please try again; the backup provider could not produce a clean answer." }, 502);
         }
-        if (body.stream) return textEventStream(reply);
-        return json({ reply, provider: output.provider });
+        if (body.stream) return textEventStream(reply, output.provider, output.provider !== "cloudflare");
+        return json({ reply, provider: output.provider, switched: output.provider !== "cloudflare" });
       } catch (error) {
         const limited = /429|quota|rate.?limit|capacity|neurons|exceeded/i.test(String(error?.message || error));
         return json({ error: limited ? "DOGE AI has reached the configured AI provider quota. Try again after the provider resets." : "DOGE AI couldn't reach its configured AI model. Please try again." }, limited ? 429 : 502);
