@@ -94,12 +94,12 @@ export default {
         const reply = result?.choices?.[0]?.message?.content ?? result?.response ?? result?.result?.response;
         if (typeof reply !== "string" || !reply.trim()) return json({ error: "The model returned an empty answer." }, 502);
         return json({ reply, provider: output.provider }, 200, { "X-Doge-AI-Provider": output.provider });
-      } catch { return json({ error: "Doge AI couldn't reach its AI model. Please try again." }, 502); }
+      } catch (error) { const limited = /429|quota|rate.?limit|capacity|neurons|exceeded/i.test(String(error?.message || error)); return json({ error: limited ? "DOGE AI has reached the configured free AI quota. Try again after the provider resets, or configure an approved free fallback." : "DOGE AI could not reach its configured AI provider. Please try again." }, limited ? 429 : 502); }
     }
 
     if (url.pathname === "/api/title") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-      if (!env.AI && !env.OPENROUTER_API_KEY) return json({ error: "DOGE AI has no model provider configured." }, 503);
+      if (!env.AI && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
       try {
         const body = await request.json();
         const prompt = String(body.prompt || "").trim().slice(0, 1800);
@@ -117,7 +117,7 @@ export default {
 
     if (url.pathname === "/api/cowork") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-      if (!env.AI && !env.OPENROUTER_API_KEY) return json({ error: "DOGE AI has no model provider configured." }, 503);
+      if (!env.AI && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
       try {
         const body = await request.json();
         const task = String(body.task || "").trim().slice(0, 1800);
