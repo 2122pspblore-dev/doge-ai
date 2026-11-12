@@ -320,7 +320,7 @@ export default {
         if (!prompt || prompt.length > 1800) return json({ error: "Enter an image prompt under 1,800 characters." }, 400);
         const asksForText = prompt.includes('"') || prompt.includes("'") || /text|word|letter|sign|label|caption|typography/i.test(prompt);
         const imagePrompt = asksForText
-          ? prompt + "\\nTYPOGRAPHY: render requested wording exactly, letter-for-letter, with correct spelling, no substitutions or extra words. Keep text short, prominent, and clearly readable."
+          ? prompt + "\nTYPOGRAPHY: render requested wording exactly, letter-for-letter, with correct spelling, no substitutions or extra words. Keep text short, prominent, and clearly readable."
           : prompt + "\\nDo not include lettering, words, logos, captions, or watermarks unless explicitly requested.";
         const result = await env.AI.run("@cf/black-forest-labs/flux-1-schnell", { prompt: imagePrompt, steps: 4 });
         if (!result?.image) return json({ error: "The image model returned no image." }, 502);
