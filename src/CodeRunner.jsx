@@ -17,6 +17,7 @@ export default function CodeRunner() {
   const [open, setOpen] = useState(false);
   const [language, setLanguage] = useState('javascript');
   const [codeModel, setCodeModel] = useState(() => localStorage.getItem('doge-ai-code-model') || 'thinking');
+  const [agentMode, setAgentMode] = useState('implement');
   const [code, setCode] = useState(STARTERS.javascript);
   const [output, setOutput] = useState('');
   const [running, setRunning] = useState(false);
@@ -180,7 +181,7 @@ export default function CodeRunner() {
         body: JSON.stringify({
           model: codeModel,
           messages: [
-            { role: 'user', content: 'You are editing code in the DOGE AI editor. Make only the requested changes, preserve existing behavior and unrelated code, and do not invent APIs or claim you tested it. Return the complete updated file in exactly one fenced code block using the ' + language + ' language. If the requested change is unsafe or impossible, explain briefly instead of fabricating code.\n\nRequested change:\n' + instruction.trim() + '\n\nCurrent file:\n```' + language + '\n' + code + '\n```' }
+            { role: 'user', content: 'You are DOGE AI Code Agent working on the current file in the editor. Agent mode: ' + agentMode.toUpperCase() + '. Be precise, inspect the supplied code before answering, preserve unrelated behavior, and never claim you ran or tested anything. In PLAN mode, give a short ordered implementation plan without changing code. In EXPLAIN mode, explain how the current code works and point out important assumptions. In DEBUG mode, identify likely bugs and their causes; include a corrected full file only if a concrete fix is clear. In IMPLEMENT mode, make only the requested changes and return the complete updated file in exactly one fenced code block using the ' + language + ' language. Do not invent APIs. If the request is unsafe or impossible, explain briefly.\n\nRequest:\n' + instruction.trim() + '\n\nCurrent file:\n```' + language + '\n' + code + '\n```' }
           ]
         })
       });
@@ -188,13 +189,24 @@ export default function CodeRunner() {
       if (!response.ok) throw new Error(data.error || 'AI edit failed.');
       const answer = data.reply ?? data.response ?? data.result?.response ?? data.choices?.[0]?.message?.content;
       if (typeof answer !== 'string' || !answer.trim()) throw new Error('The AI returned an empty response.');
+      if (agentMode !== 'implement') {
+        const suggestedCode = extractCode(answer);
+        if (suggestedCode && agentMode === 'debug') {
+          setCode(suggestedCode);
+          setNotice('A suggested debug fix was applied to the editor. Review it before running.');
+        } else {
+          setNotice(answer);
+        }
+        setInstruction('');
+        return;
+      }
       const updated = extractCode(answer);
       if (!updated) throw new Error('The AI did not return a code block. Your original code was kept.');
       setCode(updated);
       setOutput('');
       setPreview('');
       setInstruction('');
-      setNotice('AI edit applied. Review the changes before running or exporting.');
+      setNotice('Code Agent applied an edit. Review the changes before running or exporting.');
     } catch (error) {
       setNotice(error.message || 'Could not edit this code.');
     } finally {
@@ -243,9 +255,10 @@ export default function CodeRunner() {
           {preview && <div className="doge-preview-wrap"><div className="doge-output-title">HTML preview</div><iframe title="HTML preview" sandbox="allow-scripts" srcDoc={`<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:"><style>body{font:14px system-ui;padding:16px;color:#222}</style>${preview}`} /></div>}
           {output && <div className="doge-output"><div className="doge-output-title">Console output</div><pre>{output}</pre></div>}
           <div className="doge-ai-edit">
-            <label htmlFor="doge-ai-edit-instruction">Ask Doge AI to edit this code</label>
+            <label htmlFor="doge-ai-edit-instruction">DOGE AI Code Agent · current file only</label>
+            <select value={agentMode} onChange={event => setAgentMode(event.target.value)}><option value="plan">Plan changes</option><option value="explain">Explain code</option><option value="debug">Debug code</option><option value="implement">Implement changes</option></select>
             <textarea id="doge-ai-edit-instruction" rows={2} value={instruction} onChange={event => setInstruction(event.target.value)} placeholder="e.g. Add input validation and explain errors clearly…"/>
-            <button disabled={aiBusy || !instruction.trim()} onClick={askAI}><Sparkles size={13}/>{aiBusy ? 'Editing…' : 'Apply AI edit'}</button>
+            <button disabled={aiBusy || !instruction.trim()} onClick={askAI}><Sparkles size={13}/>{aiBusy ? 'Working…' : agentMode === 'implement' ? 'Apply code changes' : 'Ask Code Agent'}</button>
           </div>
           {notice && <p className="doge-editor-notice">{notice}</p>}
         </div>
