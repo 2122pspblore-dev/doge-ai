@@ -92,7 +92,7 @@ export default function GroupChats() {
   return <>
     {!user && <div className="gc-gate"><form className="gc-gate-card" onSubmit={register}><div className="gc-mark">d</div><h1>Welcome to DOGE AI</h1><p>Create your device's user profile to start chatting and join group conversations.</p><label>Your username</label><input value={username} onChange={e=>setUsername(e.target.value)} minLength={3} maxLength={20} pattern="[A-Za-z0-9_]{3,20}" placeholder="e.g. DogeFan123" required autoFocus/><small>3–20 letters, numbers, or underscores. One profile per device.</small>{error&&<div className="gc-error">{error}</div>}<button disabled={busy}>{busy?'Creating profile…':'Continue'}</button></form></div>}
     {user && <section className="gc-wrap">
-      <button className="gc-launch" onClick={()=>setOpen(v=>!v)}><Users size={14}/> Cowork <span>{groups.length}</span></button>
+      <button className="gc-launch" onClick={()=>setOpen(v=>!v)}><UserPlus size={14}/> Invite people <span>{groups.length}</span></button>
       {open && <div className="gc-panel">
         <div className="gc-head"><div><b>DOGE AI Cowork</b><small>Shared AI conversations · up to 20 people · @{user.username}</small></div><div><button title="New group" onClick={createGroup}><Plus size={16}/></button><button title="Refresh" onClick={loadGroups}><RefreshCw size={14}/></button><button title="Close" onClick={()=>setOpen(false)}><X size={16}/></button></div></div>
         <div className="gc-content">
