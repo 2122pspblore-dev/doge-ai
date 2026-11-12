@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Users, Plus, Send, UserPlus, X, MessageCircle, Crown, RefreshCw } from 'lucide-react';
+import { Users, Plus, Send, UserPlus, X, MessageCircle, Crown, RefreshCw, Bot } from 'lucide-react';
 
 const DEVICE_KEY = 'doge-ai-device-id-v1';
 function getDeviceId() {
@@ -20,6 +20,7 @@ export default function GroupChats() {
   const [draft, setDraft] = useState('');
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
 
   const api = useCallback(async (path, options={}) => {
     const response = await fetch(path, { ...options, headers: { 'Content-Type':'application/json', 'X-Doge-Device':deviceId, ...(options.headers||{}) } });
@@ -72,6 +73,14 @@ export default function GroupChats() {
     try { await api('/api/groups/'+selected.id+'/members',{method:'POST',body:JSON.stringify({username:name})}); await loadRoom(selected.id); setError(''); }
     catch(e) { setError(e.message); }
   }
+  async function askAI() {
+    if (!selected || aiBusy || !messages.length) return;
+    setAiBusy(true); setError('');
+    try { await api('/api/groups/'+selected.id+'/ai',{method:'POST',body:JSON.stringify({})}); await loadRoom(selected.id); }
+    catch(e) { setError(e.message); }
+    finally { setAiBusy(false); }
+  }
+
   async function send(e) {
     e.preventDefault(); if(!draft.trim()||!selected) return;
     const content=draft.trim(); setDraft('');
@@ -83,15 +92,16 @@ export default function GroupChats() {
   return <>
     {!user && <div className="gc-gate"><form className="gc-gate-card" onSubmit={register}><div className="gc-mark">d</div><h1>Welcome to DOGE AI</h1><p>Create your device's user profile to start chatting and join group conversations.</p><label>Your username</label><input value={username} onChange={e=>setUsername(e.target.value)} minLength={3} maxLength={20} pattern="[A-Za-z0-9_]{3,20}" placeholder="e.g. DogeFan123" required autoFocus/><small>3–20 letters, numbers, or underscores. One profile per device.</small>{error&&<div className="gc-error">{error}</div>}<button disabled={busy}>{busy?'Creating profile…':'Continue'}</button></form></div>}
     {user && <section className="gc-wrap">
-      <button className="gc-launch" onClick={()=>setOpen(v=>!v)}><Users size={14}/> Groups <span>{groups.length}</span></button>
+      <button className="gc-launch" onClick={()=>setOpen(v=>!v)}><Users size={14}/> Cowork <span>{groups.length}</span></button>
       {open && <div className="gc-panel">
-        <div className="gc-head"><div><b>Group conversations</b><small>Signed in as @{user.username}</small></div><div><button title="New group" onClick={createGroup}><Plus size={16}/></button><button title="Refresh" onClick={loadGroups}><RefreshCw size={14}/></button><button title="Close" onClick={()=>setOpen(false)}><X size={16}/></button></div></div>
+        <div className="gc-head"><div><b>DOGE AI Cowork</b><small>Shared AI conversations · up to 20 people · @{user.username}</small></div><div><button title="New group" onClick={createGroup}><Plus size={16}/></button><button title="Refresh" onClick={loadGroups}><RefreshCw size={14}/></button><button title="Close" onClick={()=>setOpen(false)}><X size={16}/></button></div></div>
         <div className="gc-content">
           <aside className="gc-list">{groups.length===0&&<p className="gc-empty">No groups yet. Create one to start chatting.</p>}{groups.map(g=><button className={selected?.id===g.id?'active':''} key={g.id} onClick={()=>setSelected(g)}><MessageCircle size={14}/><span>{g.name}</span><small>{g.member_count}</small></button>)}</aside>
           <div className="gc-room">
             {!selected?<div className="gc-empty gc-center">Choose a group or create a new one.</div>:<>
               <div className="gc-room-head"><div><b>{selected.name}</b><small>{members.length} members · {members.map(m=>'@'+m.username).join(', ')}</small></div>{selected.owner_id===deviceId&&<button onClick={invite}><UserPlus size={14}/> Add people</button>}</div>
-              <div className="gc-messages">{messages.map(m=><div className={'gc-message '+(m.sender_id===deviceId?'mine':'')} key={m.id}><b>{m.sender_id===deviceId?'You':'@'+m.username}</b><p>{m.content}</p></div>)}</div>
+              <div className="gc-messages">{messages.map(m=><div className={'gc-message '+(m.sender_id===deviceId?'mine':m.sender_id==='DOGE_AI'?'gc-ai':'')} key={m.id}><b>{m.sender_id===deviceId?'You':m.sender_id==='DOGE_AI'?'DOGE AI':'@'+m.username}</b><p>{m.content}</p></div>)}</div>
+              <div className="gc-room-actions"><button type="button" onClick={askAI} disabled={aiBusy||!messages.length}><Bot size={14}/>{aiBusy?'DOGE AI is thinking…':'Ask DOGE AI'}</button></div>
               <form className="gc-compose" onSubmit={send}><input value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Message this group…" maxLength={5000}/><button disabled={!draft.trim()}><Send size={15}/></button></form>
             </>}
           </div>
