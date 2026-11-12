@@ -9,6 +9,24 @@ npm install
 npm run dev
 ```
 
+## Windows desktop installer
+
+DOGE AI can also be packaged as a Windows desktop application with Tauri.
+
+- The installer creates a dedicated DOGE AI window and Start Menu entry.
+- The desktop shell opens the official hosted DOGE AI service, so chat, provider routing, Cowork, and other online features continue to use the existing backend.
+- An internet connection is required. This is a desktop app wrapper, not an offline AI model.
+- GitHub Actions builds both NSIS `.exe` and MSI installers when desktop-related files change on `main`.
+
+To build locally on Windows, install the prerequisites for Tauri 2 (Rust, Microsoft C++ Build Tools, and WebView2), then run:
+
+```bash
+npm install
+npm run desktop:build
+```
+
+Installers are written under `src-tauri/target/release/bundle/`.
+
 ## AI providers
 
 The Cloudflare Workers AI binding is the primary provider. An optional OpenRouter text fallback can be enabled for quota or availability failures.
