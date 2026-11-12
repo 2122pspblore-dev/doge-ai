@@ -110,7 +110,7 @@ const runTextModel = async (env, cloudflareModel, options) => {
         method: "POST",
         headers: { "Authorization": "Bearer " + env.GROQ_API_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: env.GROQ_MODEL || "llama-3.3-70b-versatile",
+          model: env.GROQ_MODEL || "openai/gpt-oss-120b",
           messages: providerHandoffMessages(options),
           max_tokens: options.max_tokens || 1800,
           temperature: options.temperature ?? 0.35,
