@@ -286,3 +286,11 @@ body{overflow:hidden}
 .doge-ai-edit select{width:100%;margin:6px 0 8px;padding:8px;border:1px solid var(--border,#393540);border-radius:8px;background:var(--input-bg,rgba(0,0,0,.15));color:inherit;font:inherit;font-size:12px}
 .doge-editor-notice{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto}
 @media(max-width:600px){.memory-top{padding:7px}.memory-top span{display:none}}
+
+
+.doge-agent-files{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:5px 0 8px}
+.doge-agent-files>button,.doge-agent-files>span{border:1px solid var(--border,#393540);background:transparent;color:inherit;border-radius:7px;padding:5px 8px;font:inherit;font-size:10px}
+.doge-agent-files>button{cursor:pointer}
+.doge-agent-files>span{display:inline-flex;align-items:center;gap:6px;color:var(--muted,#aaa)}
+.doge-agent-files>span button{border:0;background:transparent;color:inherit;cursor:pointer;font-size:14px;padding:0 2px}
+.doge-editor-patch-download{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:7px 10px;border:1px solid var(--border,#393540);border-radius:8px;background:transparent;color:inherit;font-size:11px;cursor:pointer}
