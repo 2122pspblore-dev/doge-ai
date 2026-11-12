@@ -26,7 +26,7 @@ const runTextModel = async (env, cloudflareModel, options) => {
         "X-Title": "DOGE AI"
       },
       body: JSON.stringify({
-        model: env.OPENROUTER_MODEL || "openrouter/free",
+        model: env.OPENROUTER_MODEL || "nvidia/nemotron-3-ultra-550b-a55b:free",
         messages: options.messages,
         max_tokens: options.max_tokens,
         temperature: options.temperature,
