@@ -231,7 +231,7 @@ export default {
         }
         if (parts[3] === "messages" && request.method === "GET") {
           const result = await db.prepare("SELECT m.id, m.sender_id, u.username, m.content, m.created_at FROM group_messages m JOIN users u ON u.device_id=m.sender_id WHERE m.group_id=? ORDER BY m.created_at DESC LIMIT 100").bind(groupId).all();
-          return json({ messages: (result.results || []).reverse().map(m => m.content.startsWith("[[DOGE_AI]] ") ? { ...m, sender_id: "DOGE_AI", username: "Doge AI", content: m.content.slice(11) } : m) });
+          return json({ messages: (result.results || []).reverse().map(m => m.content.startsWith("[[DOGE_AI]] ") ? { ...m, sender_id: "DOGE_AI", username: "Doge AI", content: m.content.slice(12) } : m) });
         }
         if (parts[3] === "messages" && request.method === "POST") {
           const body = await request.json();
