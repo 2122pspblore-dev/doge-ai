@@ -202,14 +202,14 @@ export default function CodeRunner() {
     setNotice('');
     setPatchText('');
     try {
-      const projectContext = projectFiles.map(file => '\\n\\n--- Project context file: ' + file.name + ' ---\\n' + file.content + '\\n--- End project context file ---').join('');
+      const projectContext = projectFiles.map(file => '\n\n--- Project context file: ' + file.name + ' ---\n' + file.content + '\n--- End project context file ---').join('');
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: codeModel,
           messages: [
-            { role: 'user', content: 'You are DOGE AI Code Agent working on the current file in the editor. Agent mode: ' + agentMode.toUpperCase() + '. Be precise, inspect the supplied code before answering, preserve unrelated behavior, and never claim you ran or tested anything. In PLAN mode, give a short ordered implementation plan without changing code. In EXPLAIN mode, explain how the current code works and point out important assumptions. In DEBUG mode, identify likely bugs and their causes; include a corrected full file only if a concrete fix is clear. In IMPLEMENT mode, make only the requested changes to the current editor file and return the complete updated file in exactly one fenced code block using the ' + language + ' language. In PATCH mode, create a valid unified diff for every file that needs changes, use the supplied file names in diff headers, and return only the diff without Markdown fences. Treat project context files as read-only evidence unless producing a patch. Do not invent APIs. If the request is unsafe or impossible, explain briefly.\n\nRequest:\n' + instruction.trim() + '\n\nCurrent file:\n```' + language + '\n' + code + '\n```' }
+            { role: 'user', content: 'You are DOGE AI Code Agent working on the current file in the editor. Agent mode: ' + agentMode.toUpperCase() + '. Be precise, inspect the supplied code before answering, preserve unrelated behavior, and never claim you ran or tested anything. In PLAN mode, give a short ordered implementation plan without changing code. In EXPLAIN mode, explain how the current code works and point out important assumptions. In DEBUG mode, identify likely bugs and their causes; include a corrected full file only if a concrete fix is clear. In IMPLEMENT mode, make only the requested changes to the current editor file and return the complete updated file in exactly one fenced code block using the ' + language + ' language. In PATCH mode, create a valid unified diff for every file that needs changes, use the supplied file names in diff headers, and return only the diff without Markdown fences. Treat project context files as read-only evidence unless producing a patch. Do not invent APIs. If the request is unsafe or impossible, explain briefly.\n\nRequest:\n' + instruction.trim() + '\n\nCurrent editor file:\n```' + language + '\n' + code + '\n```' + projectContext }
           ]
         })
       });
