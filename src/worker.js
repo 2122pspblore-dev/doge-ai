@@ -217,7 +217,8 @@ export default {
           Detailed: "Give thorough explanations with useful examples when appropriate.",
           Professional: "Use a clear, professional and neutral tone."
         };
-        const memory = typeof body.memory === "string" ? body.memory.slice(0, 3000) : "";\n        const requestedModel = body.model === "auto" ? chooseAutomaticModel(body.messages) : (body.model === "thinking" ? "thinking" : "fast");
+        const memory = typeof body.memory === "string" ? body.memory.slice(0, 3000) : "";
+        const requestedModel = body.model === "auto" ? chooseAutomaticModel(body.messages) : (body.model === "thinking" ? "thinking" : "fast");
         const profile = body.profile && typeof body.profile.username === "string" ? body.profile.username.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20) : "";
         const hasImages = body.messages.some(m => Array.isArray(m.images) && m.images.length > 0);
         const model = hasImages ? "@cf/meta/llama-3.2-11b-vision-instruct" : CHAT_MODELS[requestedModel];
