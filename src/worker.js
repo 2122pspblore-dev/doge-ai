@@ -15,13 +15,28 @@ const isBadModelOutput = value => {
   return false;
 };
 
-const textEventStream = reply => new Response(new ReadableStream({
+const textEventStream = (reply, provider = "cloudflare", switched = false) => new Response(new ReadableStream({
   start(controller) {
     const encoder = new TextEncoder();
     controller.enqueue(encoder.encode("data: " + JSON.stringify({ response: reply }) + "\n\n"));
     controller.close();
   }
 }), { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no" } });
+
+const providerHandoffMessages = options => {
+  const messages = options.messages || [];
+  const recent = messages.filter(message => message.role === "user" || message.role === "assistant").slice(-8);
+  const recap = recent.map(message => {
+    const raw = typeof message.content === "string" ? message.content : Array.isArray(message.content) ? message.content.map(part => part.text || (part.type === "image" ? "[image]" : "")).join(" ") : "";
+    const clipped = String(raw).replace(/\\s+/g, " ").trim().slice(0, 650);
+    return (message.role === "assistant" ? "DOGE AI: " : "User: ") + clipped;
+  }).filter(line => line.length > 7).join("\\n");
+  const style = String(options.handoffPersonality || "Friendly").slice(0, 32);
+  const handoff = "PROVIDER HANDOFF: You are continuing the same DOGE AI conversation after an automatic provider switch. Keep DOGE AI as your identity. Preserve the established response style (" + style + "); match the previous assistant's level of formality, warmth, directness, and formatting rather than announcing a new personality. The full conversation is included below; this compact recap is an extra continuity aid, not a replacement for reading it.\\nRECENT CONTEXT:\\n" + (recap || "No earlier turns are available.");
+  return messages.map((message, index) => index === 0 && message.role === "system"
+    ? { ...message, content: String(message.content || "") + "\\n\\n" + handoff }
+    : message);
+};
 
 const runTextModel = async (env, cloudflareModel, options) => {
   const failures = [];
@@ -45,8 +60,8 @@ const runTextModel = async (env, cloudflareModel, options) => {
   if (env.GEMINI_API_KEY && !options.skipGemini) {
     try {
       const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
-      const system = options.messages.find(message => message.role === "system")?.content;
-      const contents = options.messages.filter(message => message.role !== "system").map(message => ({
+      const system = handoffMessages.find(message => message.role === "system")?.content;
+      const handoffMessages = providerHandoffMessages(options);\n      const contents = handoffMessages.filter(message => message.role !== "system").map(message => ({
         role: message.role === "assistant" ? "model" : "user",
         parts: [{ text: typeof message.content === "string" ? message.content : JSON.stringify(message.content) }]
       }));
@@ -209,7 +224,7 @@ export default {
         if (hasImages) {
           output = { provider: "cloudflare", result: await env.AI.run(model, { messages, max_tokens: 1800, temperature: body.advanced ? 0.5 : 0.35, stream: false }) };
         } else {
-          const modelOptions = { messages, max_tokens: body.model === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: false };
+          const modelOptions = { messages, max_tokens: body.model === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: false, handoffPersonality: body.personality };
           output = await runTextModel(env, model, modelOptions);
         }
         let result = output.result;
@@ -246,7 +261,7 @@ export default {
 
     if (url.pathname === "/api/title") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-      if (!env.AI && !env.GEMINI_API_KEY && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
+      if (!env.AI && !env.GEMINI_API_KEY && !env.GROQ_API_KEY && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
       try {
         const body = await request.json();
         const prompt = String(body.prompt || "").trim().slice(0, 1800);
@@ -264,7 +279,7 @@ export default {
 
     if (url.pathname === "/api/cowork") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-      if (!env.AI && !env.GEMINI_API_KEY && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "No text AI provider is configured." }, 503);
+      if (!env.AI && !env.GEMINI_API_KEY && !env.GROQ_API_KEY && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "No text AI provider is configured." }, 503);
       try {
         const body = await request.json();
         const task = String(body.task || "").trim().slice(0, 1800);
