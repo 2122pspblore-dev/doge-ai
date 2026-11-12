@@ -205,7 +205,6 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/chat") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-      if (!env.AI && !env.GEMINI_API_KEY && !env.GROQ_API_KEY && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
       try {
         const body = await request.json();
         if (!Array.isArray(body.messages) || body.messages.length < 1 || body.messages.length > 40) return json({ error: "Send between 1 and 40 messages." }, 400);
@@ -219,6 +218,10 @@ export default {
         };
         const memory = typeof body.memory === "string" ? body.memory.slice(0, 3000) : "";
         const selectedProvider = ["gemini","groq","openrouter"].includes(body.model) ? body.model : "cloudflare";
+        if (selectedProvider === "gemini" && !env.GEMINI_API_KEY) return json({ error: "Gemini is selected, but GEMINI_API_KEY is missing in Cloudflare Worker secrets." }, 503);
+        if (selectedProvider === "groq" && !env.GROQ_API_KEY) return json({ error: "Groq is selected, but GROQ_API_KEY is missing in Cloudflare Worker secrets." }, 503);
+        if (selectedProvider === "openrouter" && !env.OPENROUTER_API_KEY) return json({ error: "OpenRouter is selected, but OPENROUTER_API_KEY is missing in Cloudflare Worker secrets." }, 503);
+        if (selectedProvider === "cloudflare" && !env.AI && !env.GEMINI_API_KEY && !env.GROQ_API_KEY && !env.OPENROUTER_API_KEY) return json({ error: "No provider is configured. Add a Cloudflare AI binding or provider API key as a Worker secret." }, 503);
         const requestedModel = body.model === "auto" ? chooseAutomaticModel(body.messages) : (body.model === "thinking" ? "thinking" : "fast");
         const profile = body.profile && typeof body.profile.username === "string" ? body.profile.username.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20) : "";
         const hasImages = body.messages.some(m => Array.isArray(m.images) && m.images.length > 0);
