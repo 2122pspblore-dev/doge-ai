@@ -5,83 +5,124 @@ const CHAT_MODELS = {
 const json = (data, status=200) => Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 
 const runTextModel = async (env, cloudflareModel, options) => {
-  let cloudflareError = null;
+  const failures = [];
   if (env.AI) {
     try {
       return { provider: "cloudflare", result: await env.AI.run(cloudflareModel, options) };
     } catch (error) {
-      cloudflareError = error;
+      failures.push("Cloudflare: " + String(error?.message || error));
     }
   }
-  if (env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true") {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + env.OPENROUTER_API_KEY,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://dog1e.vercel.app",
-        "X-Title": "DOGE AI"
-      },
-      body: JSON.stringify({
-        model: env.OPENROUTER_MODEL || "openrouter/free",
-        messages: options.messages,
-        max_tokens: options.max_tokens,
-        temperature: options.temperature,
-        stream: Boolean(options.stream)
-      })
-    });
-    if (!response.ok) throw new Error("OpenRouter fallback returned HTTP " + response.status);
-    if (options.stream) return { provider: "openrouter", response };
-    return { provider: "openrouter", result: await response.json() };
+
+  // Gemini is the first automatic backup. Store its key as a Worker secret.
+  if (env.GEMINI_API_KEY) {
+    try {
+      const model = env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+      const system = options.messages.find(message => message.role === "system")?.content;
+      const contents = options.messages.filter(message => message.role !== "system").map(message => ({
+        role: message.role === "assistant" ? "model" : "user",
+        parts: [{ text: typeof message.content === "string" ? message.content : JSON.stringify(message.content) }]
+      }));
+      const payload = {
+        contents,
+        generationConfig: {
+          maxOutputTokens: options.max_tokens || 1800,
+          temperature: options.temperature ?? 0.35
+        }
+      };
+      if (system) payload.systemInstruction = { parts: [{ text: String(system) }] };
+      const action = options.stream ? "streamGenerateContent?alt=sse" : "generateContent";
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":" + action, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const detail = (await response.text()).slice(0, 400);
+        throw new Error("Gemini returned HTTP " + response.status + (detail ? ": " + detail : ""));
+      }
+      if (options.stream) return { provider: "gemini", response };
+      const data = await response.json();
+      const text = (data.candidates?.[0]?.content?.parts || []).map(part => part.text || "").join("");
+      return { provider: "gemini", result: { choices: [{ message: { content: text } }] } };
+    } catch (error) {
+      failures.push("Gemini: " + String(error?.message || error));
+    }
   }
-  if (cloudflareError) throw cloudflareError;
-  throw new Error("No AI provider is configured.");
+
+  // OpenRouter remains an optional third provider.
+  if (env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true") {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + env.OPENROUTER_API_KEY,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://dog1e.vercel.app",
+          "X-Title": "DOGE AI"
+        },
+        body: JSON.stringify({
+          model: env.OPENROUTER_MODEL || "openrouter/free",
+          messages: options.messages,
+          max_tokens: options.max_tokens,
+          temperature: options.temperature,
+          stream: Boolean(options.stream)
+        })
+      });
+      if (!response.ok) throw new Error("OpenRouter returned HTTP " + response.status + ": " + (await response.text()).slice(0, 300));
+      if (options.stream) return { provider: "openrouter", response };
+      return { provider: "openrouter", result: await response.json() };
+    } catch (error) {
+      failures.push("OpenRouter: " + String(error?.message || error));
+    }
+  }
+
+  throw new Error(failures.length ? "All configured AI providers failed. " + failures.join(" | ") : "No AI provider is configured.");
 };
 
-const adaptOpenRouterStream = (response) => {
+const adaptProviderStream = (response, extractText) => {
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let buffer = "";
+  const emit = (line, controller) => {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("data:")) return false;
+    const raw = trimmed.slice(5).trim();
+    if (!raw || raw === "[DONE]") return false;
+    try {
+      const chunk = extractText(JSON.parse(raw));
+      if (typeof chunk === "string" && chunk) {
+        controller.enqueue(encoder.encode("data: " + JSON.stringify({ response: chunk }) + "\n\n"));
+        return true;
+      }
+    } catch {}
+    return false;
+  };
   return new Response(new ReadableStream({
     async pull(controller) {
       while (true) {
         const { value, done } = await reader.read();
         if (done) {
           buffer += decoder.decode();
-          if (buffer.trim()) emitLines(buffer, controller, encoder);
+          if (buffer) emit(buffer, controller);
           controller.close();
           return;
         }
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\\n");
+        const lines = buffer.split(/\r?\n/);
         buffer = lines.pop() || "";
-        if (emitLines(lines.join("\\n"), controller, encoder)) return;
+        for (const line of lines) {
+          if (emit(line, controller)) return;
+        }
       }
     },
     cancel() { reader.cancel(); }
   }), { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no" } });
 };
 
-function emitLines(input, controller, encoder) {
-  const lines = input.split("\\n");
-  let emitted = false;
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith("data:")) continue;
-    const raw = trimmed.slice(5).trim();
-    if (!raw || raw === "[DONE]") continue;
-    try {
-      const item = JSON.parse(raw);
-      const chunk = item.choices?.[0]?.delta?.content;
-      if (typeof chunk === "string" && chunk) {
-        controller.enqueue(encoder.encode("data: " + JSON.stringify({ response: chunk }) + "\\n\\n"));
-        emitted = true;
-      }
-    } catch {}
-  }
-  return emitted;
-}
+const adaptOpenRouterStream = response => adaptProviderStream(response, item => item.choices?.[0]?.delta?.content);
+const adaptGeminiStream = response => adaptProviderStream(response, item => (item.candidates?.[0]?.content?.parts || []).map(part => part.text || "").join(""));
 
 
 export default {
@@ -89,7 +130,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/chat") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-      if (!env.AI && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
+      if (!env.AI && !env.GEMINI_API_KEY && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
       try {
         const body = await request.json();
         if (!Array.isArray(body.messages) || body.messages.length < 1 || body.messages.length > 40) return json({ error: "Send between 1 and 40 messages." }, 400);
@@ -121,7 +162,7 @@ export default {
               const output = hasImages
                 ? { provider: "cloudflare", result: await env.AI.run(model, { messages, max_tokens: body.model === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: true }) }
                 : await runTextModel(env, model, { messages, max_tokens: body.model === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: true });
-              if (output.response) return adaptOpenRouterStream(output.response);
+              if (output.response) return output.provider === "gemini" ? adaptGeminiStream(output.response) : adaptOpenRouterStream(output.response);
               const result = output.result;
               if (result instanceof Response) return result;
               if (result && typeof result.getReader === "function") return new Response(result, { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no" } });
@@ -163,7 +204,7 @@ export default {
 
     if (url.pathname === "/api/cowork") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-      if (!env.AI) return json({ error: "Workers AI is not connected." }, 503);
+      if (!env.AI && !env.GEMINI_API_KEY && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "No text AI provider is configured." }, 503);
       try {
         const body = await request.json();
         const task = String(body.task || "").trim().slice(0, 1800);
