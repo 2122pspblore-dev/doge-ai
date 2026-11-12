@@ -8,7 +8,15 @@ const runTextModel = async (env, cloudflareModel, options) => {
   const failures = [];
   if (env.AI) {
     try {
-      return { provider: "cloudflare", result: await env.AI.run(cloudflareModel, options) };
+      // Don't let a slow Workers AI response stall the backup provider indefinitely.
+      const result = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("Cloudflare AI timed out after 6 seconds")), 6000);
+        Promise.resolve(env.AI.run(cloudflareModel, options)).then(
+          value => { clearTimeout(timer); resolve(value); },
+          error => { clearTimeout(timer); reject(error); }
+        );
+      });
+      return { provider: "cloudflare", result };
     } catch (error) {
       failures.push("Cloudflare: " + String(error?.message || error));
     }
@@ -17,7 +25,7 @@ const runTextModel = async (env, cloudflareModel, options) => {
   // Gemini is the first automatic backup. Store its key as a Worker secret.
   if (env.GEMINI_API_KEY) {
     try {
-      const model = env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+      const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
       const system = options.messages.find(message => message.role === "system")?.content;
       const contents = options.messages.filter(message => message.role !== "system").map(message => ({
         role: message.role === "assistant" ? "model" : "user",
@@ -157,19 +165,15 @@ export default {
         ];
         if (hasImages && !env.AI) return json({ error: "Image understanding requires the Cloudflare AI binding. Text chat can use the optional fallback." }, 503);
         if (body.stream) {
-          for (let attempt = 0; attempt < 3; attempt++) {
-            try {
-              const output = hasImages
-                ? { provider: "cloudflare", result: await env.AI.run(model, { messages, max_tokens: body.model === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: true }) }
-                : await runTextModel(env, model, { messages, max_tokens: body.model === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: true });
-              if (output.response) return output.provider === "gemini" ? adaptGeminiStream(output.response) : adaptOpenRouterStream(output.response);
-              const result = output.result;
-              if (result instanceof Response) return result;
-              if (result && typeof result.getReader === "function") return new Response(result, { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no" } });
-              if (result?.body) return new Response(result.body, { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform" } });
-              throw new Error("No streaming response");
-            } catch (error) { if (attempt === 2) throw error; await new Promise(r => setTimeout(r, 350 * (attempt + 1))); }
-          }
+          const output = hasImages
+            ? { provider: "cloudflare", result: await env.AI.run(model, { messages, max_tokens: body.model === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: true }) }
+            : await runTextModel(env, model, { messages, max_tokens: body.model === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: true });
+          if (output.response) return output.provider === "gemini" ? adaptGeminiStream(output.response) : adaptOpenRouterStream(output.response);
+          const result = output.result;
+          if (result instanceof Response) return result;
+          if (result && typeof result.getReader === "function") return new Response(result, { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no" } });
+          if (result?.body) return new Response(result.body, { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform" } });
+          throw new Error("No streaming response");
         }
         const output = hasImages
           ? { provider: "cloudflare", result: await env.AI.run(model, { messages, max_tokens: 1800, temperature: body.advanced ? 0.5 : 0.35 }) }
