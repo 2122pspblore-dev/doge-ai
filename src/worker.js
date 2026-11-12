@@ -7,7 +7,7 @@ const json = (data, status=200) => Response.json(data, { status, headers: { "Cac
 const isBadModelOutput = value => {
   const text = String(value || "").trim();
   if (text.length < 2 || text.length > 24000) return true;
-  if (/^(?:analysis|internal reasoning|chain of thought|assistant notes)\\s*:/i.test(text)) return true;
+  if (/^(?:analysis|internal reasoning|chain of thought|assistant notes)\s*:/i.test(text)) return true;
   if (/the user wants to know|the assistant should respond|model editable context|hidden system prompt|developer instructions/i.test(text)) return true;
   if (/(?:DOG\\s+){3,}AI/i.test(text) || /(?:bro\\s+){3,}/i.test(text)) return true;
   const words = text.toLowerCase().match(/[a-z0-9']+/g) || [];
@@ -18,7 +18,7 @@ const isBadModelOutput = value => {
 const textEventStream = reply => new Response(new ReadableStream({
   start(controller) {
     const encoder = new TextEncoder();
-    controller.enqueue(encoder.encode("data: " + JSON.stringify({ response: reply }) + "\\n\\n"));
+    controller.enqueue(encoder.encode("data: " + JSON.stringify({ response: reply }) + "\n\n"));
     controller.close();
   }
 }), { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no" } });
