@@ -1,0 +1,13 @@
+[package]
+name = "doge-ai-desktop"
+version = "1.0.0"
+description = "DOGE AI desktop application"
+authors = ["DOGE AI"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+url = "2"
