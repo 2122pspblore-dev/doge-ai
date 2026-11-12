@@ -61,8 +61,9 @@ const runTextModel = async (env, cloudflareModel, options) => {
   if (env.GEMINI_API_KEY && !options.skipGemini) {
     try {
       const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+      const handoffMessages = providerHandoffMessages(options);
       const system = handoffMessages.find(message => message.role === "system")?.content;
-      const handoffMessages = providerHandoffMessages(options);\n      const contents = handoffMessages.filter(message => message.role !== "system").map(message => ({
+      const contents = handoffMessages.filter(message => message.role !== "system").map(message => ({
         role: message.role === "assistant" ? "model" : "user",
         parts: [{ text: typeof message.content === "string" ? message.content : JSON.stringify(message.content) }]
       }));
@@ -101,7 +102,7 @@ const runTextModel = async (env, cloudflareModel, options) => {
         headers: { "Authorization": "Bearer " + env.GROQ_API_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: env.GROQ_MODEL || "llama-3.3-70b-versatile",
-          messages: options.messages,
+          messages: providerHandoffMessages(options),
           max_tokens: options.max_tokens || 1800,
           temperature: options.temperature ?? 0.35,
           stream: Boolean(options.stream)
@@ -128,7 +129,7 @@ const runTextModel = async (env, cloudflareModel, options) => {
         },
         body: JSON.stringify({
           model: env.OPENROUTER_MODEL || "openrouter/free",
-          messages: options.messages,
+          messages: providerHandoffMessages(options),
           max_tokens: options.max_tokens,
           temperature: options.temperature,
           stream: Boolean(options.stream)
