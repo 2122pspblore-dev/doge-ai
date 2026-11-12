@@ -256,3 +256,6 @@ body{overflow:hidden}
 .image-mode-tabs button.active{background:#e7e3ed;color:#29242e;border-color:#e7e3ed}
 .v2-dialog input[type="file"]{width:100%;color:#aaa4b2;font-size:11px;margin:5px 0}
 .v2-dialog>small{display:block;color:#928b9b;font-size:10px;margin:4px 0 8px}
+
+
+.gc-room-actions{display:flex;justify-content:flex-end;padding:7px 0}.gc-room-actions button{display:inline-flex;align-items:center;gap:7px;border:1px solid #62516f;background:#30283a;color:#eee4f7;border-radius:8px;padding:7px 10px;font-size:11px;cursor:pointer}.gc-room-actions button:disabled{opacity:.55;cursor:default}.gc-message.gc-ai{border:1px solid #66527a;background:#27212f}.gc-message.gc-ai b{color:#d8b8ff}
