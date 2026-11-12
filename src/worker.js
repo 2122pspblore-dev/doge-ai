@@ -65,6 +65,7 @@ const adaptOpenRouterStream = (response) => {
 
 function emitLines(input, controller, encoder) {
   const lines = input.split("\\n");
+  let emitted = false;
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed.startsWith("data:")) continue;
@@ -73,10 +74,13 @@ function emitLines(input, controller, encoder) {
     try {
       const item = JSON.parse(raw);
       const chunk = item.choices?.[0]?.delta?.content;
-      if (typeof chunk === "string" && chunk) controller.enqueue(encoder.encode("data: " + JSON.stringify({ response: chunk }) + "\\n\\n"));
+      if (typeof chunk === "string" && chunk) {
+        controller.enqueue(encoder.encode("data: " + JSON.stringify({ response: chunk }) + "\\n\\n"));
+        emitted = true;
+      }
     } catch {}
   }
-  return false;
+  return emitted;
 }
 
 
