@@ -55,7 +55,7 @@ export default function App(){
   const onKey=(e)=>{
    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector('.chat-search')?.focus()}
    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='n'){e.preventDefault();createChat()}
-   if(e.key==='Escape'){setSettingsOpen(false);setEditingIndex(null);if(busy)abortRef.current?.abort()}
+   if(e.key==='Escape'){setSettingsOpen(false);setMemoryOpen(false);setHelpOpen(false);setEditingIndex(null);if(busy)abortRef.current?.abort()}
   };
   window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);
  },[busy,chats]);
@@ -90,7 +90,7 @@ export default function App(){
  async function send(value=text,overrideMessages=null){
   const clean=value.trim();if((!clean&&!files.length)||busy||!activeChat)return;
   const attached=[...files],prompt=clean+attached.filter(f=>f.type!=='image').map(f=>'\n\n--- Attached file: '+f.name+' ---\n'+f.content+'\n--- End of '+f.name+' ---').join('');
-  let memoryForRequest=activeChat.memory||'';const rememberMatch=clean.match(/^(?:please\\s+)?remember(?:\\s+that)?[: ,]+([\\s\\S]+)/i);if(rememberMatch){const note=rememberMatch[1].trim();if(/password|passcode|api key|secret key|private key|credit card|bank account|social security/i.test(note)){setError('I can’t save passwords, API keys, or financial secrets.');}else if(note){memoryForRequest=[memoryForRequest,note].filter(Boolean).join('\\n').slice(-3000);updateChat(activeChat.id,c=>({...c,memory:memoryForRequest}));}}
+  let memoryForRequest=activeChat.memory||'';const rememberMatch=clean.match(/^(?:please\s+)?remember(?:\s+that)?[: ,]+([\s\S]+)/i);if(rememberMatch){const note=rememberMatch[1].trim();if(/password|passcode|api key|secret key|private key|credit card|bank account|social security/i.test(note)){setError('I can’t save passwords, API keys, or financial secrets.');}else if(note){memoryForRequest=[memoryForRequest,note].filter(Boolean).join('\n').slice(-3000);updateChat(activeChat.id,c=>({...c,memory:memoryForRequest}));}}
   const user={role:'user',content:prompt,displayContent:clean,attachments:attached.map(f=>f.name),images:attached.filter(f=>f.type==='image').map(f=>f.content)};
   const history=overrideMessages||[...messages,user],chatId=activeChat.id;
   updateChat(chatId,c=>({...c,title:c.messages.length?c.title:(clean.slice(0,42)||attached[0]?.name||'New chat'),messages:[...history,{role:'assistant',content:'',streaming:true}],updatedAt:Date.now()}));
