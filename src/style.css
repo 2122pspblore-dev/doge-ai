@@ -271,3 +271,18 @@ body{overflow:hidden}
 :root[data-theme="light"] .help-modal section h3{color:#342d3d}
 :root[data-theme="light"] .help-modal section p,:root[data-theme="light"] .help-foot{color:#625a6b}
 @media(max-width:700px){.provider-indicator{font-size:8px;margin-left:5px}.help-modal{max-height:86vh}}
+
+
+/* Conversation memory and automatic model controls */
+.memory-top{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border,#393540);background:transparent;color:var(--text,#ddd);border-radius:9px;padding:7px 10px;font-size:11px;cursor:pointer;position:relative}
+.memory-top:hover{background:var(--hover,rgba(255,255,255,.06))}
+.memory-top i{width:6px;height:6px;border-radius:50%;background:#8e6bd1;display:inline-block}
+.memory-modal{width:min(520px,calc(100vw - 28px))}
+.memory-modal>p{font-size:12px;line-height:1.55;color:var(--muted,#aaa);margin:0 0 12px}
+.memory-modal textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:120px;border:1px solid var(--border,#393540);border-radius:10px;background:var(--input-bg,rgba(0,0,0,.15));color:inherit;padding:11px;font:inherit;font-size:12px;line-height:1.5}
+.memory-modal>small{display:block;text-align:right;color:var(--muted,#999);font-size:10px;margin-top:6px}
+.memory-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.memory-actions .secondary{background:transparent;border:1px solid var(--border,#393540);color:inherit}
+.doge-ai-edit select{width:100%;margin:6px 0 8px;padding:8px;border:1px solid var(--border,#393540);border-radius:8px;background:var(--input-bg,rgba(0,0,0,.15));color:inherit;font:inherit;font-size:12px}
+.doge-editor-notice{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto}
+@media(max-width:600px){.memory-top{padding:7px}.memory-top span{display:none}}
