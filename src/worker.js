@@ -186,7 +186,7 @@ export default {
 
     if (url.pathname === "/api/title") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-      if (!env.AI && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
+      if (!env.AI && !env.GEMINI_API_KEY && !(env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true")) return json({ error: "DOGE AI has no model provider configured." }, 503);
       try {
         const body = await request.json();
         const prompt = String(body.prompt || "").trim().slice(0, 1800);
