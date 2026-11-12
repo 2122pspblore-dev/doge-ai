@@ -69,7 +69,7 @@ const runTextModel = async (env, cloudflareModel, options) => {
   // Gemini is the first automatic backup. Store its key as a Worker secret.
   if (env.GEMINI_API_KEY && !options.skipGemini) {
     try {
-      const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+      const model = env.GEMINI_MODEL || "gemini-2.5-flash";
       const handoffMessages = providerHandoffMessages(options);
       const system = handoffMessages.find(message => message.role === "system")?.content;
       const contents = handoffMessages.filter(message => message.role !== "system").map(message => ({
@@ -126,7 +126,7 @@ const runTextModel = async (env, cloudflareModel, options) => {
   }
 
   // OpenRouter remains an optional third provider.
-  if (env.OPENROUTER_API_KEY && env.OPENROUTER_ALLOW_FALLBACK === "true") {
+  if (env.OPENROUTER_API_KEY && (options.forceOpenRouter || env.OPENROUTER_ALLOW_FALLBACK === "true")) {
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -237,7 +237,7 @@ export default {
         if (hasImages) {
           output = { provider: "cloudflare", result: await env.AI.run(model, { messages, max_tokens: 1800, temperature: body.advanced ? 0.5 : 0.35, stream: false }) };
         } else {
-          const modelOptions = { messages, max_tokens: requestedModel === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: false, handoffPersonality: body.personality, skipCloudflare: selectedProvider !== "cloudflare", skipGemini: selectedProvider === "groq" || selectedProvider === "openrouter", skipGroq: selectedProvider === "openrouter" };
+          const modelOptions = { messages, max_tokens: requestedModel === "thinking" ? 3000 : 1800, temperature: body.advanced ? 0.5 : 0.35, stream: false, handoffPersonality: body.personality, skipCloudflare: selectedProvider !== "cloudflare", skipGemini: selectedProvider === "groq" || selectedProvider === "openrouter", skipGroq: selectedProvider === "openrouter", forceOpenRouter: selectedProvider === "openrouter" };
           output = await runTextModel(env, model, modelOptions);
         }
         let result = output.result;
@@ -268,7 +268,7 @@ export default {
         return json({ reply, provider: output.provider, switched: output.provider !== "cloudflare", model: requestedModel });
       } catch (error) {
         const limited = /429|quota|rate.?limit|capacity|neurons|exceeded/i.test(String(error?.message || error));
-        return json({ error: limited ? "DOGE AI has reached the configured AI provider quota. Try again after the provider resets." : "DOGE AI couldn't reach its configured AI model. Please try again." }, limited ? 429 : 502);
+        return json({ error: limited ? "DOGE AI has reached the configured AI provider quota. Try again after the provider resets." : "DOGE AI provider error: " + String(error?.message || error).slice(0, 700) }, limited ? 429 : 502);
       }
     }
 
