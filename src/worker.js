@@ -69,13 +69,16 @@ const extractMicrosoftStatus = source => {
     const match = pattern.exec(combined);
     if (match && !found.includes(label)) found.push(label);
   }
+  const statusPattern = "(Service interruption|Service degradation|Extended recovery|Restoring service|Investigating|Service restored|All products are operational|Operational)";
+  const m365Status = combined.match(new RegExp("Microsoft 365\\s*\\(Business or Enterprise\\).{0,160}?" + statusPattern, "i"))?.[1] || "";
+  const consumerStatus = combined.match(new RegExp("Microsoft consumer products.{0,160}?" + statusPattern, "i"))?.[1] || "";
   const updated = combined.match(/(?:last updated|updated|last refreshed)\s*:?\s*([^|.]{5,100})/i)?.[1]?.trim() || "";
   const context = [];
   for (const [label, pattern] of microsoftStatusTerms) {
     const match = pattern.exec(combined);
     if (match) context.push(combined.slice(Math.max(0, match.index - 150), Math.min(combined.length, match.index + match[0].length + 220)));
   }
-  return { statuses: found, updated, context: [...new Set(context)].slice(0, 5) };
+  return { statuses: found, m365Status, consumerStatus, updated, context: [...new Set(context)].slice(0, 5) };
 };
 const searchMicrosoftStatus = async () => {
   const urls = ["https://status.cloud.microsoft/m365", "https://sdf.status.cloud.microsoft/"];
@@ -91,9 +94,11 @@ const searchMicrosoftStatus = async () => {
     return {
       title: "Microsoft official service health status",
       url,
-      snippet: "Detected status labels: " + parsed.statuses.join(", ") +
-        (parsed.updated ? ". Page update time: " + parsed.updated : "") +
-        (parsed.context.length ? ". Page evidence: " + parsed.context.join(" | ").slice(0, 1800) : ""),
+      snippet: (parsed.m365Status ? "Microsoft 365 Business/Enterprise status: " + parsed.m365Status + ". " : "") +
+        (parsed.consumerStatus ? "Microsoft consumer products status: " + parsed.consumerStatus + ". " : "") +
+        (!parsed.m365Status && !parsed.consumerStatus ? "General page status labels (not necessarily Microsoft 365-specific): " + parsed.statuses.join(", ") + ". " : "") +
+        (parsed.updated ? "Page update time: " + parsed.updated + ". " : "") +
+        (parsed.context.length ? "Page evidence: " + parsed.context.join(" | ").slice(0, 1500) : ""),
       provider: "Microsoft Service Health"
     };
   }));
@@ -424,7 +429,7 @@ export default {
             liveSources = await searchWeb(recentUserContext || latestText);
             const retrievedAt = new Date().toISOString();
             liveSearchNote = liveSources.length
-              ? "\n\nLIVE WEB RESULTS (retrieved " + retrievedAt + "):\n" + liveSources.map((item, index) => "[" + (index + 1) + "] " + item.title + "\nURL: " + item.url + "\nSnippet: " + item.snippet).join("\n\n") + "\nYou have already performed a live web search. Answer the user's current-information question directly from these results. Do not claim you cannot browse, cannot check live status, or cannot access real-time information. If sources conflict, explain the conflict and identify each source. Distinguish publication dates from retrieval time and do not claim facts beyond what the results support."
+              ? "\n\nLIVE WEB RESULTS (retrieved " + retrievedAt + "):\n" + liveSources.map((item, index) => "[" + (index + 1) + "] " + item.title + "\nURL: " + item.url + "\nSnippet: " + item.snippet).join("\n\n") + "\nYou have already performed a live web search. Answer the user's current-information question directly from these results. Do not claim you cannot browse, cannot check live status, or cannot access real-time information. If sources conflict, explain the conflict and identify each source. Distinguish publication dates from retrieval time and do not claim facts beyond what the results support." + (liveSources.some(item => /Microsoft Service Health/.test(item.provider || "")) ? " For Microsoft status questions, state the Microsoft 365 Business/Enterprise status separately from consumer-product status. Do not mistake an Azure or other product's operational label for Microsoft 365 being operational. If Microsoft's public status pages disagree, report both results with their URLs and say they conflict; do not collapse them into one overall status. Treat an indexed search excerpt as weaker evidence than a direct page read." : "")
               : "\n\nLIVE WEB SEARCH WAS ATTEMPTED AT " + retrievedAt + " BUT RETURNED NO RESULTS. Clearly disclose that current information could not be verified.";
           } catch (searchError) {
             liveSearchNote = "\n\nLIVE WEB SEARCH FAILED: " + String(searchError?.message || searchError) + ". Clearly disclose that current information could not be verified.";
