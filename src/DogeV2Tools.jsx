@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 2122pspblore-dev. All rights reserved. */
 import { useState } from 'react';
 import CodeRunner from './CodeRunner.jsx';
 import { Globe, Image as ImageIcon, GitBranch, BookOpen, Download, BarChart3, FilePlus2, X } from 'lucide-react';
