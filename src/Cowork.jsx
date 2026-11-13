@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 2122pspblore-dev. All rights reserved. */
 import { useState } from 'react';
 import { Bot, Check, ChevronDown, ExternalLink, LoaderCircle, Play, Search, X } from 'lucide-react';
 
