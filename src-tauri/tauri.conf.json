@@ -16,15 +16,29 @@
         "minWidth": 760,
         "minHeight": 560,
         "center": true
+      },
+      {
+        "label": "vision",
+        "title": "DOGE VISION + HANDS",
+        "url": "vision.html",
+        "width": 540,
+        "height": 820,
+        "minWidth": 440,
+        "minHeight": 620,
+        "center": true
       }
     ],
     "security": {
       "csp": null
-    }
+    },
+    "withGlobalTauri": true
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": [
+      "nsis",
+      "msi"
+    ],
     "shortDescription": "DOGE AI desktop assistant",
     "category": "Productivity",
     "windows": {
