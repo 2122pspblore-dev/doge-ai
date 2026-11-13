@@ -49,23 +49,86 @@ const searchGoogleNews = async query => {
   if (!results.length) throw new Error("Google News RSS returned no parseable results");
   return results;
 };
+const microsoftStatusTerms = [
+  ["Service interruption", /service interruption|serviceinterruption/i],
+  ["Service degradation", /service degradation|servicedegradation/i],
+  ["Extended recovery", /extended recovery|extendedrecovery/i],
+  ["Restoring service", /restoring service|restoringservice/i],
+  ["Investigating", /\binvestigating\b/i],
+  ["Service restored", /service restored|servicerestored/i],
+  ["All products operational", /all products are operational|all products operational/i],
+  ["Operational", /\boperational\b|serviceoperational/i]
+];
+const extractMicrosoftStatus = source => {
+  const raw = String(source || "");
+  const visible = decodeSearchText(raw);
+  const searchable = decodeSearchText(raw.replace(/\\\\u([0-9a-f]{4})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16))));
+  const combined = (visible + " " + searchable).slice(0, 50000);
+  const found = [];
+  for (const [label, pattern] of microsoftStatusTerms) {
+    const match = pattern.exec(combined);
+    if (match && !found.includes(label)) found.push(label);
+  }
+  const updated = combined.match(/(?:last updated|updated|last refreshed)\\s*:?\\s*([^|.]{5,100})/i)?.[1]?.trim() || "";
+  const context = [];
+  for (const [label, pattern] of microsoftStatusTerms) {
+    const match = pattern.exec(combined);
+    if (match) context.push(combined.slice(Math.max(0, match.index - 150), Math.min(combined.length, match.index + match[0].length + 220)));
+  }
+  return { statuses: found, updated, context: [...new Set(context)].slice(0, 5) };
+};
 const searchMicrosoftStatus = async () => {
-  const urls = ["https://status.cloud.microsoft/", "https://sdf.status.cloud.microsoft/"];
+  const urls = ["https://status.cloud.microsoft/m365", "https://sdf.status.cloud.microsoft/"];
   const checks = await Promise.allSettled(urls.map(async url => {
     const response = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; DOGEAI/1.0)", "Accept": "text/html,application/xhtml+xml" },
-      signal: AbortSignal.timeout(7000)
+      signal: AbortSignal.timeout(8000)
     });
     if (!response.ok) throw new Error("HTTP " + response.status);
     const html = await response.text();
-    const text = decodeSearchText(html).slice(0, 12000);
-    if (!/(all products are operational|service degradation|service interruption|extended recovery|restoring service|investigating)/i.test(text)) {
-      throw new Error("No readable service-health status in page");
-    }
-    const statusMatches = [...text.matchAll(/.{0,100}(?:all products are operational|service degradation|service interruption|extended recovery|restoring service|investigating).{0,260}/gi)].map(match => match[0]);
-    return { title: "Microsoft official service health status", url, snippet: statusMatches.slice(0, 3).join(" | ") || text.slice(0, 500), provider: "Microsoft Service Health" };
+    const parsed = extractMicrosoftStatus(html);
+    if (!parsed.statuses.length) throw new Error("Page loaded but no recognizable status was present in its HTML");
+    return {
+      title: "Microsoft official service health status",
+      url,
+      snippet: "Detected status labels: " + parsed.statuses.join(", ") +
+        (parsed.updated ? ". " + "Page update time: " + parsed.updated : "") +
+        (parsed.context.length ? ". Page evidence: " + parsed.context.join(" | ").slice(0, 1800) : ""),
+      provider: "Microsoft Service Health"
+    };
   }));
-  return checks.filter(item => item.status === "fulfilled").map(item => item.value);
+  const results = checks.filter(item => item.status === "fulfilled").map(item => item.value);
+  if (results.length) return results;
+
+  // Microsoft's status pages can render their status in client-side data. If direct HTML
+  // does not expose it, ask Bing for indexed excerpts from the official status domains.
+  const query = 'site:status.cloud.microsoft OR site:sdf.status.cloud.microsoft Microsoft 365 current service status';
+  const response = await fetch("https://www.bing.com/search?q=" + encodeURIComponent(query), {
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; DOGEAI/1.0)", "Accept": "text/html,application/xhtml+xml" },
+    signal: AbortSignal.timeout(8000)
+  });
+  if (!response.ok) throw new Error("Official status pages unavailable (" + checks.map(item => item.reason?.message || "fetch failed").join("; ") + "); Bing fallback HTTP " + response.status);
+  const html = await response.text();
+  const blocks = html.match(/<li\\b[^>]*class=["'][^"']*\\bb_algo\\b[^"']*["'][^>]*>[\\s\\S]*?<\\/li>/gi) || [];
+  const fallback = [];
+  for (const block of blocks) {
+    const heading = block.match(/<h2\\b[^>]*>([\\s\\S]*?)<\\/h2>/i)?.[1] || "";
+    const href = heading.match(/<a\\b[^>]*\\bhref=["']([^"']+)["']/i)?.[1] || "";
+    const title = decodeSearchText(heading);
+    const snippet = decodeSearchText(block.match(/<p\\b[^>]*>([\\s\\S]*?)<\\/p>/i)?.[1] || "");
+    if (!/status\\.cloud\\.microsoft/i.test(href) || !/microsoft 365|service health/i.test(title + " " + snippet)) continue;
+    const parsed = extractMicrosoftStatus(title + " " + snippet);
+    if (!parsed.statuses.length) continue;
+    fallback.push({
+      title: "Microsoft official service health status (indexed excerpt)",
+      url: href,
+      snippet: "Search-engine excerpt, not a direct page read. Detected status labels: " + parsed.statuses.join(", ") + ". " + snippet,
+      provider: "Microsoft Service Health via Bing"
+    });
+    if (fallback.length >= 3) break;
+  }
+  if (!fallback.length) throw new Error("Microsoft status pages did not expose a readable status and official-domain search returned no status excerpt");
+  return fallback;
 };
 const searchWeb = async query => {
   const q = String(query || "").trim().slice(0, 500);
