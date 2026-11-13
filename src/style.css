@@ -294,3 +294,13 @@ body{overflow:hidden}
 .doge-agent-files>span{display:inline-flex;align-items:center;gap:6px;color:var(--muted,#aaa)}
 .doge-agent-files>span button{border:0;background:transparent;color:inherit;cursor:pointer;font-size:14px;padding:0 2px}
 .doge-editor-patch-download{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:7px 10px;border:1px solid var(--border,#393540);border-radius:8px;background:transparent;color:inherit;font-size:11px;cursor:pointer}
+
+
+/* Chromebook / PWA install prompt */
+.doge-pwa-install{position:fixed;right:18px;bottom:18px;z-index:10000;display:flex;align-items:center;gap:12px;max-width:min(520px,calc(100vw - 36px));padding:12px 14px;background:#211d2a;border:1px solid #5b4b70;border-radius:14px;box-shadow:0 12px 40px #0008;color:#f5f1fa;font:12px/1.4 Inter,system-ui,sans-serif}
+.doge-pwa-copy{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.doge-pwa-copy b{font-size:13px}.doge-pwa-copy span{color:#b9b0c4;font-size:11px}
+.doge-pwa-install>button{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;border:1px solid #8b72b5;background:#8061b5;color:white;border-radius:9px;padding:8px 10px;font-size:11px;cursor:pointer}
+.doge-pwa-install>button.doge-pwa-dismiss{padding:7px;background:transparent;border-color:#554b60;color:#d9d0e2}
+.doge-pwa-help{position:absolute;right:0;bottom:calc(100% + 9px);width:min(350px,calc(100vw - 36px));padding:13px;background:#211d2a;border:1px solid #5b4b70;border-radius:12px;box-shadow:0 12px 40px #0008}
+.doge-pwa-help>b{display:flex;align-items:center;gap:7px}.doge-pwa-help p{color:#c8c0d0;font-size:11px;line-height:1.55}.doge-pwa-help button{border:0;background:#8061b5;color:white;border-radius:7px;padding:7px 11px;cursor:pointer}
+@media(max-width:520px){.doge-pwa-install{left:10px;right:10px;bottom:10px;max-width:none;gap:7px;padding:9px}.doge-pwa-copy span{font-size:10px}.doge-pwa-install>button{padding:7px;font-size:10px}}
