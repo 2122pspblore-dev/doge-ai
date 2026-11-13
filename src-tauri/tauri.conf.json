@@ -16,26 +16,6 @@
         "minWidth": 760,
         "minHeight": 560,
         "center": true
-      },
-      {
-        "label": "vision",
-        "title": "DOGE VISION + HANDS",
-        "url": "vision.html",
-        "width": 540,
-        "height": 820,
-        "minWidth": 440,
-        "minHeight": 620,
-        "center": true
-      },
-      {
-        "label": "vision",
-        "title": "DOGE VISION + HANDS",
-        "url": "vision.html",
-        "width": 540,
-        "height": 820,
-        "minWidth": 440,
-        "minHeight": 620,
-        "center": true
       }
     ],
     "security": {
