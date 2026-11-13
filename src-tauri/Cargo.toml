@@ -12,6 +12,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 url = "2"
 base64 = "0.22"
+serde = { version = "1", features = ["derive"] }
 enigo = "0.2"
 image = "0.25"
 xcap = "0.0.14"
