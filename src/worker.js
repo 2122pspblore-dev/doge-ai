@@ -143,7 +143,18 @@ const searchWeb = async query => {
       const statusResults = await searchMicrosoftStatus();
       if (statusResults.length) return statusResults;
       errors.push("Microsoft Service Health: official pages did not expose readable status text");
-    } catch (error) { errors.push("Microsoft Service Health: " + String(error?.message || error)); }
+    } catch (error) {
+      const reason = String(error?.message || error).slice(0, 500);
+      // Fail closed for service-status questions. Never send these queries to generic
+      // news/search providers, which can return unrelated results that look authoritative.
+      return [{
+        title: "Microsoft 365 live status could not be verified",
+        url: "https://status.cloud.microsoft/m365",
+        snippet: "DOGE AI attempted Microsoft's official status pages but could not extract a verifiable live status. Technical detail: " + reason + ". No outage or operational state can be confirmed from this search. Check the official Microsoft Service Health page directly.",
+        provider: "Microsoft Service Health (verification unavailable)",
+        statusUnavailable: true
+      }];
+    }
   }
   // Use a structured market-data API for Bitcoin price questions instead of scraping a search snippet.
   if (/\b(bitcoin|btc)\b/i.test(q) && /\b(price|value|worth|cost|trading|quote)\b/i.test(q)) {
@@ -426,10 +437,13 @@ export default {
         // Current-status questions must trigger search even if the UI's optional search toggle is off.
         if (needsLiveSearch(latestText)) {
           try {
-            liveSources = await searchWeb(recentUserContext || latestText);
+            const statusQuery = /\\b(microsoft|office\\s*365|m365)\\b/i.test(latestText) && /\\b(status|down|outage|service|working|online)\\b/i.test(latestText);
+            const shortFollowUp = latestText.trim().split(/\\s+/).length <= 8;
+            const searchQuery = statusQuery ? latestText : (shortFollowUp ? (recentUserContext || latestText) : latestText);
+            liveSources = await searchWeb(searchQuery);
             const retrievedAt = new Date().toISOString();
             liveSearchNote = liveSources.length
-              ? "\n\nLIVE WEB RESULTS (retrieved " + retrievedAt + "):\n" + liveSources.map((item, index) => "[" + (index + 1) + "] " + item.title + "\nURL: " + item.url + "\nSnippet: " + item.snippet).join("\n\n") + "\nYou have already performed a live web search. Answer the user's current-information question directly from these results. Do not claim you cannot browse, cannot check live status, or cannot access real-time information. If sources conflict, explain the conflict and identify each source. Distinguish publication dates from retrieval time and do not claim facts beyond what the results support." + (liveSources.some(item => /Microsoft Service Health/.test(item.provider || "")) ? " For Microsoft status questions, state the Microsoft 365 Business/Enterprise status separately from consumer-product status. Do not mistake an Azure or other product's operational label for Microsoft 365 being operational. If Microsoft's public status pages disagree, report both results with their URLs and say they conflict; do not collapse them into one overall status. Treat an indexed search excerpt as weaker evidence than a direct page read." : "")
+              ? "\n\nLIVE WEB RESULTS (retrieved " + retrievedAt + "):\n" + liveSources.map((item, index) => "[" + (index + 1) + "] " + item.title + "\nURL: " + item.url + "\nSnippet: " + item.snippet).join("\n\n") + "\nYou have already performed a live web search. Answer the user's current-information question directly from these results. Do not claim you cannot browse, cannot check live status, or cannot access real-time information. If sources conflict, explain the conflict and identify each source. Distinguish publication dates from retrieval time and do not claim facts beyond what the results support." + (liveSources.some(item => /Microsoft Service Health/.test(item.provider || "")) ? " For Microsoft status questions, state the Microsoft 365 Business/Enterprise status separately from consumer-product status. Do not mistake an Azure or other product's operational label for Microsoft 365 being operational. If Microsoft's public status pages disagree, report both results with their URLs and say they conflict; do not collapse them into one overall status. Treat an indexed search excerpt as weaker evidence than a direct page read. If the result says live status could not be verified, say exactly that; do not substitute general descriptions, dictionary/news results, guessed incident details, or invented timestamps." : "")
               : "\n\nLIVE WEB SEARCH WAS ATTEMPTED AT " + retrievedAt + " BUT RETURNED NO RESULTS. Clearly disclose that current information could not be verified.";
           } catch (searchError) {
             liveSearchNote = "\n\nLIVE WEB SEARCH FAILED: " + String(searchError?.message || searchError) + ". Clearly disclose that current information could not be verified.";
