@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 2122pspblore-dev. All rights reserved. */
 import { useEffect, useRef, useState } from 'react';
 import { Code2, Download, Play, Sparkles, Square, RotateCcw, ChevronDown, X } from 'lucide-react';
 
