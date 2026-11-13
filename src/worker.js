@@ -77,9 +77,6 @@ const searchWeb = async query => {
       errors.push("Microsoft Service Health: official pages did not expose readable status text");
     } catch (error) { errors.push("Microsoft Service Health: " + String(error?.message || error)); }
   }
-  try {
-    return await searchGoogleNews(q);
-  } catch (error) { errors.push("Google News RSS: " + String(error?.message || error)); }
   // Use a structured market-data API for Bitcoin price questions instead of scraping a search snippet.
   if (/\b(bitcoin|btc)\b/i.test(q) && /\b(price|value|worth|cost|trading|quote)\b/i.test(q)) {
     try {
@@ -98,6 +95,9 @@ const searchWeb = async query => {
       return [{ title: "Bitcoin (BTC) live USD market price — CoinGecko", url: "https://www.coingecko.com/en/coins/bitcoin", snippet, provider: "CoinGecko API" }];
     } catch (error) { errors.push("CoinGecko: " + String(error?.message || error)); }
   }
+  try {
+    return await searchGoogleNews(q);
+  } catch (error) { errors.push("Google News RSS: " + String(error?.message || error)); }
   const headers = { "User-Agent": "Mozilla/5.0 (compatible; DOGEAI/1.0; +https://dog1e.vercel.app)", "Accept": "text/html,application/xhtml+xml" };
   // Try DuckDuckGo first, then Bing if it blocks the Worker or changes its markup.
   const providers = [
