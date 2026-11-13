@@ -1,0 +1,47 @@
+name: Chromebook PWA build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "package.json"
+      - "vite.config.js"
+      - ".github/workflows/chromebook-pwa.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-chromebook-pwa:
+    name: Build DOGE AI Chromebook PWA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Build web app
+        run: npm run build
+      - name: Verify PWA files
+        run: |
+          test -s dist/manifest.webmanifest
+          test -s dist/sw.js
+          test -s dist/icons/doge-192.svg
+          test -s dist/icons/doge-512.svg
+          grep -q 'manifest.webmanifest' dist/index.html
+      - name: Upload Chromebook PWA bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: DOGE-AI-Chromebook-PWA
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
