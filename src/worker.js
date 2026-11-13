@@ -25,22 +25,74 @@ const isBadModelOutput = value => {
 };
 
 const needsLiveSearch = text => /\b(latest|today|tonight|right now|currently|current|this week|this month|breaking|real.?time|live|status|outage|weather|forecast|price|stock|exchange rate|news|recent|202[5-9])\b/i.test(String(text || "")) || /\b(search|look up|browse|check online|verify online)\b/i.test(String(text || ""));
+const decodeSearchText = value => String(value || "").replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n))).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16))).replace(/\s+/g, " ").trim();
 const searchWeb = async query => {
-  const response = await fetch("https://html.duckduckgo.com/html/?q=" + encodeURIComponent(query.slice(0, 240)), { headers: { "User-Agent": "Mozilla/5.0 (compatible; DogeAI/2.0)" }, signal: AbortSignal.timeout(9000) });
-  if (!response.ok) throw new Error("Search provider returned HTTP " + response.status);
-  const html = await response.text(), results = [];
-  for (const block of html.split(/class="result\b/).slice(1)) {
-    const link = block.match(/class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i);
-    const snippet = block.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/(?:a|div)>/i);
-    if (!link) continue;
-    const decode = value => value.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
-    let href = link[1].replace(/&amp;/g, "&");
-    try { const parsed = new URL(href); if (parsed.hostname.includes("duckduckgo.com") && parsed.searchParams.has("uddg")) href = parsed.searchParams.get("uddg"); } catch {}
-    if (!/^https?:\/\//i.test(href)) continue;
-    results.push({ title: decode(link[2]), url: href, snippet: decode(snippet?.[1] || "") });
-    if (results.length >= 5) break;
+  const q = String(query || "").trim().slice(0, 240);
+  const errors = [];
+  // Use a structured market-data API for Bitcoin price questions instead of scraping a search snippet.
+  if (/\b(bitcoin|btc)\b/i.test(q) && /\b(price|value|worth|cost|trading|quote)\b/i.test(q)) {
+    try {
+      const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true", {
+        headers: { "Accept": "application/json", "User-Agent": "DOGE-AI/1.0" },
+        signal: AbortSignal.timeout(7000)
+      });
+      if (!response.ok) throw new Error("CoinGecko returned HTTP " + response.status);
+      const data = await response.json();
+      const price = data?.bitcoin?.usd;
+      if (typeof price !== "number" || !Number.isFinite(price)) throw new Error("CoinGecko returned no valid BTC/USD price");
+      const change = data.bitcoin.usd_24h_change;
+      const snippet = "BTC/USD: $" + price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+        (typeof change === "number" ? "; 24-hour change: " + (change >= 0 ? "+" : "") + change.toFixed(2) + "%" : "") +
+        ". Retrieved " + new Date().toISOString() + ".";
+      return [{ title: "Bitcoin (BTC) live USD market price — CoinGecko", url: "https://www.coingecko.com/en/coins/bitcoin", snippet, provider: "CoinGecko API" }];
+    } catch (error) { errors.push("CoinGecko: " + String(error?.message || error)); }
   }
-  return results;
+  const headers = { "User-Agent": "Mozilla/5.0 (compatible; DOGEAI/1.0; +https://dog1e.vercel.app)", "Accept": "text/html,application/xhtml+xml" };
+  // Try DuckDuckGo first, then Bing if it blocks the Worker or changes its markup.
+  const providers = [
+    { name: "DuckDuckGo", url: "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(q), parse: html => {
+      const results = [];
+      const blocks = html.split(/class=["'][^"']*\bresult\b[^"']*["']/i).slice(1);
+      for (const block of blocks) {
+        const anchor = block.match(/<a\b(?=[^>]*\bclass=["'][^"']*result__a)([^>]*)>([\s\S]*?)<\/a>/i);
+        if (!anchor) continue;
+        const href = anchor[1].match(/\bhref=["']([^"']+)["']/i)?.[1];
+        if (!href) continue;
+        let target = href.replace(/&amp;/g, "&");
+        try { const parsed = new URL(target); if (parsed.hostname.includes("duckduckgo.com") && parsed.searchParams.has("uddg")) target = parsed.searchParams.get("uddg"); } catch {}
+        if (!/^https?:\/\//i.test(target)) continue;
+        const snippet = block.match(/class=["'][^"']*result__snippet[^"']*["'][^>]*>([\s\S]*?)<\/(?:a|div)>/i)?.[1] || "";
+        results.push({ title: decodeSearchText(anchor[2]), url: target, snippet: decodeSearchText(snippet) });
+        if (results.length >= 5) break;
+      }
+      return results;
+    } },
+    { name: "Bing", url: "https://www.bing.com/search?q=" + encodeURIComponent(q), parse: html => {
+      const results = [];
+      const blocks = html.match(/<li\b[^>]*class=["'][^"']*\bb_algo\b[^"']*["'][^>]*>[\s\S]*?<\/li>/gi) || [];
+      for (const block of blocks) {
+        const heading = block.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i)?.[1] || "";
+        const href = heading.match(/<a\b[^>]*\bhref=["']([^"']+)["']/i)?.[1];
+        const title = heading.match(/<a\b[^>]*>([\s\S]*?)<\/a>/i)?.[1] || "";
+        if (!href || !/^https?:\/\//i.test(href)) continue;
+        const snippet = block.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1] || "";
+        results.push({ title: decodeSearchText(title), url: href, snippet: decodeSearchText(snippet) });
+        if (results.length >= 5) break;
+      }
+      return results;
+    } }
+  ];
+  for (const provider of providers) {
+    try {
+      const response = await fetch(provider.url, { headers, signal: AbortSignal.timeout(8000) });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const html = await response.text();
+      const results = provider.parse(html).filter(item => item.title && item.url);
+      if (results.length) return results.map(item => ({ ...item, provider: provider.name }));
+      errors.push(provider.name + ": page returned but no parseable results (possibly blocked or markup changed)");
+    } catch (error) { errors.push(provider.name + ": " + String(error?.message || error)); }
+  }
+  throw new Error(errors.join("; ") || "No search provider returned results");
 };
 
 const textEventStream = (reply, provider = "cloudflare", switched = false, model = "fast") => new Response(new ReadableStream({
@@ -402,25 +454,11 @@ export default {
       const query = (url.searchParams.get("q") || "").trim();
       if (!query || query.length > 240) return json({ error: "Enter a search query under 240 characters." }, 400);
       try {
-        const target = "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(query);
-        const response = await fetch(target, { headers: { "User-Agent": "Mozilla/5.0 (compatible; DogeAI/2.0)" } });
-        if (!response.ok) return json({ error: "Web search is temporarily unavailable." }, 502);
-        const html = await response.text();
-        const results = [];
-        const blocks = html.split(/class="result\b/).slice(1);
-        for (const block of blocks) {
-          const link = block.match(/class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i);
-          const snippet = block.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/(?:a|div)>/i);
-          if (!link) continue;
-          const decode = s => s.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
-          let href = link[1].replace(/&amp;/g, "&");
-          try { const parsed = new URL(href); if (parsed.hostname.includes("duckduckgo.com") && parsed.searchParams.has("uddg")) href = parsed.searchParams.get("uddg"); } catch {}
-          if (!/^https?:\/\//i.test(href)) continue;
-          results.push({ title: decode(link[2]), url: href, snippet: decode(snippet?.[1] || "") });
-          if (results.length >= 6) break;
-        }
-        return json({ results });
-      } catch { return json({ error: "Couldn't complete web search." }, 502); }
+        const results = await searchWeb(query);
+        return json({ results, provider: results[0]?.provider || "web", searchedAt: new Date().toISOString() });
+      } catch (error) {
+        return json({ error: "All search sources failed: " + String(error?.message || error).slice(0, 500), results: [], searchedAt: new Date().toISOString() }, 502);
+      }
     }
 
 
