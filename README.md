@@ -36,3 +36,10 @@ Set `OPENROUTER_API_KEY` as a **Cloudflare Worker secret** and set `OPENROUTER_A
 Text chat, conversation titles, Cowork planning, and shared-room AI replies can use the fallback. Image understanding, image generation, and image editing remain Cloudflare-only.
 
 When enabled, text prompts and conversation context may be sent to OpenRouter and its selected upstream model provider. Tell users before enabling this for a public deployment. Never put provider API keys in browser code or commit them to the repository.
+
+
+## Copyright and licensing
+
+Copyright (c) 2026 2122pspblore-dev. All rights reserved.
+
+DOGE AI is proprietary software. **All rights reserved.** Copying, modifying, redistributing, or commercial reuse requires prior written permission. See [LICENSE](./LICENSE) and [COPYRIGHT.md](./COPYRIGHT.md). Third-party dependencies retain their own licenses.
