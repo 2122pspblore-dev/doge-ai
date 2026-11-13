@@ -62,14 +62,14 @@ const microsoftStatusTerms = [
 const extractMicrosoftStatus = source => {
   const raw = String(source || "");
   const visible = decodeSearchText(raw);
-  const searchable = decodeSearchText(raw.replace(/\\\\u([0-9a-f]{4})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16))));
+  const searchable = decodeSearchText(raw.replace(/\\u([0-9a-f]{4})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16))));
   const combined = (visible + " " + searchable).slice(0, 50000);
   const found = [];
   for (const [label, pattern] of microsoftStatusTerms) {
     const match = pattern.exec(combined);
     if (match && !found.includes(label)) found.push(label);
   }
-  const updated = combined.match(/(?:last updated|updated|last refreshed)\\s*:?\\s*([^|.]{5,100})/i)?.[1]?.trim() || "";
+  const updated = combined.match(/(?:last updated|updated|last refreshed)\s*:?\s*([^|.]{5,100})/i)?.[1]?.trim() || "";
   const context = [];
   for (const [label, pattern] of microsoftStatusTerms) {
     const match = pattern.exec(combined);
@@ -92,7 +92,7 @@ const searchMicrosoftStatus = async () => {
       title: "Microsoft official service health status",
       url,
       snippet: "Detected status labels: " + parsed.statuses.join(", ") +
-        (parsed.updated ? ". " + "Page update time: " + parsed.updated : "") +
+        (parsed.updated ? ". Page update time: " + parsed.updated : "") +
         (parsed.context.length ? ". Page evidence: " + parsed.context.join(" | ").slice(0, 1800) : ""),
       provider: "Microsoft Service Health"
     };
@@ -109,14 +109,14 @@ const searchMicrosoftStatus = async () => {
   });
   if (!response.ok) throw new Error("Official status pages unavailable (" + checks.map(item => item.reason?.message || "fetch failed").join("; ") + "); Bing fallback HTTP " + response.status);
   const html = await response.text();
-  const blocks = html.match(/<li\\b[^>]*class=["'][^"']*\\bb_algo\\b[^"']*["'][^>]*>[\\s\\S]*?<\\/li>/gi) || [];
+  const blocks = html.match(/<li\b[^>]*class=["'][^"']*\bb_algo\b[^"']*["'][^>]*>[\s\S]*?<\/li>/gi) || [];
   const fallback = [];
   for (const block of blocks) {
-    const heading = block.match(/<h2\\b[^>]*>([\\s\\S]*?)<\\/h2>/i)?.[1] || "";
-    const href = heading.match(/<a\\b[^>]*\\bhref=["']([^"']+)["']/i)?.[1] || "";
+    const heading = block.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i)?.[1] || "";
+    const href = heading.match(/<a\b[^>]*\bhref=["']([^"']+)["']/i)?.[1] || "";
     const title = decodeSearchText(heading);
-    const snippet = decodeSearchText(block.match(/<p\\b[^>]*>([\\s\\S]*?)<\\/p>/i)?.[1] || "");
-    if (!/status\\.cloud\\.microsoft/i.test(href) || !/microsoft 365|service health/i.test(title + " " + snippet)) continue;
+    const snippet = decodeSearchText(block.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1] || "");
+    if (!/status\.cloud\.microsoft/i.test(href) || !/microsoft 365|service health/i.test(title + " " + snippet)) continue;
     const parsed = extractMicrosoftStatus(title + " " + snippet);
     if (!parsed.statuses.length) continue;
     fallback.push({
