@@ -9,12 +9,7 @@ fn main() {
                 .get_webview_window("main")
                 .expect("main DOGE AI window should exist");
 
-            // Keep the desktop shell tied to the official DOGE AI service.
-            window.on_navigation(|url| {
-                url.scheme() == "https"
-                    && url.host_str() == Some("doge-ai.2122pspblore.workers.dev")
-            });
-
+            // Open the official DOGE AI service in the desktop shell.
             let app_url = url::Url::parse("https://doge-ai.2122pspblore.workers.dev/")
                 .expect("valid DOGE AI URL");
             window.navigate(app_url)?;
