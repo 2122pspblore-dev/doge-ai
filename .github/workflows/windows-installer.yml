@@ -10,6 +10,14 @@ on:
       - "src-tauri/**"
       - "package.json"
       - ".github/workflows/windows-installer.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "desktop/**"
+      - "src-tauri/**"
+      - "package.json"
+      - ".github/workflows/windows-installer.yml"
 
 permissions:
   contents: read
