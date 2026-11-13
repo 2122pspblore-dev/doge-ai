@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 2122pspblore-dev. All rights reserved. */
 const CHAT_MODELS = {
   fast: "@cf/zai-org/glm-4.7-flash",
   thinking: "@cf/openai/gpt-oss-120b"
