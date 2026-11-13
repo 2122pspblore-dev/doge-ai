@@ -20,11 +20,15 @@
     ],
     "security": {
       "csp": null
-    }
+    },
+    "withGlobalTauri": true
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": [
+      "nsis",
+      "msi"
+    ],
     "shortDescription": "DOGE AI desktop assistant",
     "category": "Productivity",
     "windows": {
