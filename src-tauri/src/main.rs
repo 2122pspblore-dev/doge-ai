@@ -7,11 +7,7 @@ use std::io::Cursor;
 use tauri::Manager;
 
 #[derive(serde::Serialize)]
-struct ScreenCapture {
-    data_url: String,
-    width: u32,
-    height: u32,
-}
+struct ScreenCapture { data_url: String, width: u32, height: u32 }
 
 #[tauri::command]
 fn capture_screen() -> Result<ScreenCapture, String> {
@@ -28,11 +24,7 @@ fn capture_screen() -> Result<ScreenCapture, String> {
 
 #[derive(serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
-enum DesktopAction {
-    Click { x: i32, y: i32 },
-    TypeText { text: String },
-    PressKey { key: String },
-}
+enum DesktopAction { Click { x: i32, y: i32 }, TypeText { text: String }, PressKey { key: String } }
 
 #[tauri::command]
 fn execute_desktop_action(action: DesktopAction, screen_width: i32, screen_height: i32) -> Result<(), String> {
@@ -42,9 +34,7 @@ fn execute_desktop_action(action: DesktopAction, screen_width: i32, screen_heigh
     let mut enigo = Enigo::new(&Settings::default()).map_err(|e| format!("Could not initialize input: {e}"))?;
     match action {
         DesktopAction::Click { x, y } => {
-            if x < 0 || y < 0 || x >= screen_width || y >= screen_height {
-                return Err("Click coordinates are outside the captured screen.".into());
-            }
+            if x < 0 || y < 0 || x >= screen_width || y >= screen_height { return Err("Click coordinates are outside the captured screen.".into()); }
             enigo.move_mouse(x, y, Coordinate::Abs).map_err(|e| e.to_string())?;
             enigo.button(Button::Left, Direction::Click).map_err(|e| e.to_string())?;
         }
@@ -56,10 +46,9 @@ fn execute_desktop_action(action: DesktopAction, screen_width: i32, screen_heigh
             let key = match key.as_str() {
                 "ENTER" => Key::Return, "TAB" => Key::Tab, "ESC" => Key::Escape,
                 "BACKSPACE" => Key::Backspace, "DELETE" => Key::Delete,
-                "UP" => Key::UpArrow, "DOWN" => Key::DownArrow,
-                "LEFT" => Key::LeftArrow, "RIGHT" => Key::RightArrow,
-                "CTRL" => Key::Control, "ALT" => Key::Alt, "SHIFT" => Key::Shift,
-                _ => return Err("Unsupported key. Allowed: ENTER, TAB, ESC, BACKSPACE, DELETE, arrows, CTRL, ALT, SHIFT.".into())
+                "UP" => Key::UpArrow, "DOWN" => Key::DownArrow, "LEFT" => Key::LeftArrow,
+                "RIGHT" => Key::RightArrow, "CTRL" => Key::Control, "ALT" => Key::Alt,
+                "SHIFT" => Key::Shift, _ => return Err("Unsupported key.".into())
             };
             enigo.key(key, Direction::Click).map_err(|e| e.to_string())?;
         }
