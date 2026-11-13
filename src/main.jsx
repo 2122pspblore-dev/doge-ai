@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 2122pspblore-dev. All rights reserved. */
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
