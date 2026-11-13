@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101116"><title>DOGE AI — Vision & Hands</title>
+<style>
+:root{color-scheme:dark;font:14px "Segoe UI",sans-serif;background:#101116;color:#f4f4f5}*{box-sizing:border-box}body{margin:0;padding:24px;max-width:1000px;margin:auto}h1{margin:0 0 6px;font-size:26px}.muted{color:#a1a1aa}.panel{background:#191a22;border:1px solid #30313c;border-radius:16px;padding:18px;margin:16px 0}button,textarea{font:inherit;border-radius:10px;border:1px solid #444653;background:#242631;color:white;padding:11px}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#6655d9;border-color:#7667e8}.danger{background:#8e2735;border-color:#b43a4b}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}textarea{width:100%;min-height:90px;resize:vertical;margin:10px 0}.screen{width:100%;max-height:440px;object-fit:contain;background:#090a0e;border-radius:10px;margin-top:12px}.notice{background:#30291a;border:1px solid #6b5527;padding:12px;border-radius:10px;color:#f4d99a}.actions{padding-left:20px}.actions li{margin:8px 0}.check{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.status{font-weight:600}.hidden{display:none}
+</style>
+</head>
+<body>
+<h1>DOGE VISION + DOGE HANDS</h1><div class="muted">Windows desktop control · Preview and approve every action</div>
+<div class="panel">
+ <div class="notice"><b>Read before enabling:</b> DOGE AI can misunderstand your screen or click/type in the wrong place. Actions happen on your Windows account. Save your work first. Do not use this for passwords, payments, private messages, or sensitive information. A disclaimer does not remove anyone's legal rights or responsibilities.</div>
+ <label class="check"><input id="terms" type="checkbox"> I understand the risks and want to enable screen viewing and computer control for this session.</label>
+ <div class="row"><button id="start" class="primary">Enable DOGE VISION</button><button id="stop" class="danger" disabled>STOP CONTROL</button><span id="status" class="status muted">Disabled</span></div>
+ <img id="preview" class="screen hidden" alt="Screen preview">
+ <div id="dimensions" class="muted"></div>
+</div>
+<div class="panel">
+ <b>Tell DOGE what to do</b>
+ <textarea id="task" placeholder="Example: Open Notepad and type 'Hello from DOGE AI'."></textarea>
+ <div class="row"><button id="plan" class="primary" disabled>Ask DOGE to plan</button><button id="refresh" disabled>Refresh screen</button></div>
+ <div id="planbox" class="hidden"><h3>Proposed actions</h3><ol id="actions" class="actions"></ol><label class="check"><input id="approve" type="checkbox"> I reviewed these actions and approve this exact plan.</label><div class="row"><button id="run" class="primary">Run approved plan</button><button id="discard">Discard</button></div></div>
+ <p class="muted">DOGE only supports screen clicks, text entry, and a limited set of keys. It cannot run shell commands or silently install software.</p>
+</div>
+<script>
+const API="https://doge-ai.2122pspblore.workers.dev";
+const $=id=>document.getElementById(id);
+let enabled=false, stopped=false, capture=null, proposed=[];
+const status=(s)=>$("status").textContent=s;
+async function invoke(name,args){if(!window.__TAURI__?.core?.invoke)throw new Error("Native Windows controls are unavailable. Install the DOGE AI Windows desktop app.");return window.__TAURI__.core.invoke(name,args)}
+async function refresh(){if(!enabled)throw new Error("Enable DOGE VISION first.");capture=await invoke("capture_screen");$("preview").src=capture.data_url;$("preview").classList.remove("hidden");$("dimensions").textContent=capture.width+" × "+capture.height+" pixels";return capture}
+$("start").onclick=async()=>{if(!$("terms").checked){alert("Please accept the session risk notice first.");return}try{enabled=true;await refresh();stopped=false;$("plan").disabled=false;$("refresh").disabled=false;$("stop").disabled=false;$("start").disabled=true;status("VISION ON · control requires approval");}catch(e){status("Unavailable");alert(String(e))}};
+$("stop").onclick=()=>{stopped=true;enabled=false;proposed=[];$("planbox").classList.add("hidden");$("plan").disabled=true;$("refresh").disabled=true;$("stop").disabled=true;$("start").disabled=false;status("STOPPED");};
+$("refresh").onclick=async()=>{try{await refresh()}catch(e){alert(String(e))}};
+$("plan").onclick=async()=>{if(!enabled||!$("task").value.trim())return;try{status("Analyzing screen…");const shot=await refresh();const prompt="You are DOGE HANDS, a Windows desktop task planner. Look at the attached screenshot and user task. Return ONLY valid JSON: {\\"actions\\":[...]}. Allowed actions: {\\"kind\\":\\"click\\",\\"x\\":integer,\\"y\\":integer}, {\\"kind\\":\\"type_text\\",\\"text\\":string}, {\\"kind\\":\\"press_key\\",\\"key\\":one of ENTER,TAB,ESC,BACKSPACE,DELETE,UP,DOWN,LEFT,RIGHT,CTRL,ALT,SHIFT}. Coordinates are relative to screenshot dimensions "+shot.width+"x"+shot.height+". Maximum 8 actions. Do not propose deleting files, installing/uninstalling software, purchases, submitting forms, sending messages, changing security settings, or handling passwords. If the task requires one of those, return {\\"actions\\":[],\\"reason\\":\\"Needs manual handling\\"}. User task: "+$("task").value;
+const r=await fetch(API+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:[{role:"user",content:prompt,images:[shot.data_url]}],model:"auto",stream:false})});const data=await r.json();if(!r.ok)throw new Error(data.error||"DOGE could not create a plan.");let raw=String(data.reply||"").replace(/^```(?:json)?/i,"").replace(/```$/,"").trim();const parsed=JSON.parse(raw);if(!Array.isArray(parsed.actions)||parsed.actions.length>8)throw new Error("DOGE returned an invalid action plan.");proposed=parsed.actions.map(a=>{if(a.kind==="click"&&Number.isInteger(a.x)&&Number.isInteger(a.y)&&a.x>=0&&a.y>=0&&a.x<shot.width&&a.y<shot.height)return a;if(a.kind==="type_text"&&typeof a.text==="string"&&a.text.length<=2000)return a;if(a.kind==="press_key"&&["ENTER","TAB","ESC","BACKSPACE","DELETE","UP","DOWN","LEFT","RIGHT","CTRL","ALT","SHIFT"].includes(a.key))return a;throw new Error("DOGE proposed an unsupported action.");});$("actions").innerHTML="";proposed.forEach(a=>{const li=document.createElement("li");li.textContent=a.kind==="click"?"Click at ("+a.x+", "+a.y+")":a.kind==="type_text"?"Type: "+a.text:"Press "+a.key;$("actions").append(li)});$("approve").checked=false;$("planbox").classList.remove("hidden");status("Plan ready · review before running");}catch(e){status("Planning failed");alert(String(e))}};
+$("discard").onclick=()=>{$("planbox").classList.add("hidden");proposed=[]};
+$("run").onclick=async()=>{if(!enabled||stopped||!$("approve").checked||!proposed.length)return;try{status("Executing approved actions…");for(const action of proposed){if(stopped||!enabled)break;await invoke("execute_desktop_action",{action,screenWidth:capture.width,screenHeight:capture.height});await new Promise(r=>setTimeout(r,350));}if(!stopped&&enabled){status("Plan finished");await refresh()}$("planbox").classList.add("hidden");proposed=[];}catch(e){status("Action failed · stopped");$("stop").click();alert(String(e))}};
+</script>
+</body></html>
