@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 2122pspblore-dev. All rights reserved. */
 import { useEffect, useState } from 'react';
 import { Download, X, Chrome } from 'lucide-react';
 
