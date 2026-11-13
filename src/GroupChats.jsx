@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 2122pspblore-dev. All rights reserved. */
 import { useCallback, useEffect, useState } from 'react';
 import { Users, Plus, Send, UserPlus, X, MessageCircle, Crown, RefreshCw, Bot } from 'lucide-react';
 
