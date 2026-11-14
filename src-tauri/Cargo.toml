@@ -1,6 +1,6 @@
 [package]
 name = "doge-ai-desktop"
-version = "1.0.0"
+version = "1.0.1"
 description = "DOGE AI desktop application"
 authors = ["DOGE AI"]
 edition = "2021"
