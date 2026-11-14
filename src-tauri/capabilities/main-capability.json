@@ -2,7 +2,8 @@
   "identifier": "main-capability",
   "description": "Allow DOGE AI remote frontend to open Vision and control its own app windows.",
   "windows": [
-    "main"
+    "main",
+    "vision"
   ],
   "remote": {
     "urls": [
