@@ -1,0 +1,19 @@
+{
+  "identifier": "main-capability",
+  "description": "Allow DOGE AI remote frontend to open Vision and control its own app windows.",
+  "windows": [
+    "main",
+    "vision"
+  ],
+  "remote": {
+    "urls": [
+      "https://doge-ai.2122pspblore.workers.dev/*"
+    ]
+  },
+  "permissions": [
+    "core:default",
+    "core:window:allow-create",
+    "core:window:allow-show",
+    "core:window:allow-set-focus"
+  ]
+}
