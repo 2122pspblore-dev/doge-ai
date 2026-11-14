@@ -45,6 +45,9 @@ export default function App(){
  const [chatModel,setChatModel]=useState(()=>localStorage.getItem('doge-ai-model')||'auto');
  const [forceLegacy,setForceLegacy]=useState(()=>localStorage.getItem('doge-ai-force-legacy')==='1');
  const isDesktopApp=!!window.__TAURI__?.core?.invoke;
+ const [desktopVersion,setDesktopVersion]=useState(null);
+ const isOutdatedDesktop=isDesktopApp&&desktopVersion!==null&&(()=>{const current=desktopVersion.split('.').map(n=>Number.parseInt(n,10)||0);const minimum=[1,0,1];for(let i=0;i<minimum.length;i++){if((current[i]||0)!==minimum[i])return (current[i]||0)<minimum[i];}return false;})();
+ useEffect(()=>{if(!isDesktopApp)return;window.__TAURI__.core.invoke('get_app_version').then(v=>setDesktopVersion(String(v))).catch(()=>setDesktopVersion('0.0.0'))},[isDesktopApp]);
  const [deviceProfile,setDeviceProfile]=useState(()=>{try{return JSON.parse(localStorage.getItem('doge-ai-profile-v1')||'null')}catch{return null}});
  useEffect(()=>{const savedTheme=localStorage.getItem('doge-ai-theme')||'dark';document.documentElement.dataset.theme=savedTheme;const syncProfile=()=>{try{setDeviceProfile(JSON.parse(localStorage.getItem('doge-ai-profile-v1')||'null'))}catch{setDeviceProfile(null)}};const runAction=e=>{const action=e.detail?.action;if(action==='open_code_runner')window.dispatchEvent(new Event('doge-ai:open-code-runner'));if(action==='open_groups')window.dispatchEvent(new Event('doge-ai:open-groups'));const theme=action==='set_theme_dark'?'dark':action==='set_theme_light'?'light':action==='set_theme_system'?'system':null;if(theme){localStorage.setItem('doge-ai-theme',theme);document.documentElement.dataset.theme=theme;}};window.addEventListener('doge-ai-profile-updated',syncProfile);window.addEventListener('doge-ai:action',runAction);return()=>{window.removeEventListener('doge-ai-profile-updated',syncProfile);window.removeEventListener('doge-ai:action',runAction)}},[]);
  const fileInput=useRef(null),scrollRef=useRef(null),recognitionRef=useRef(null),abortRef=useRef(null),textareaRef=useRef(null);
@@ -104,7 +107,7 @@ export default function App(){
  function beginEdit(index){const m=messages[index];setEditingIndex(index);setDraftEdit(m.displayContent||m.content||'')}
  function saveEdit(index){const clean=draftEdit.trim();if(!clean)return;const history=messages.slice(0,index);history.push({role:'user',content:clean,displayContent:clean});setEditingIndex(null);updateChat(activeId,c=>({...c,messages:history}));send(clean,history)}
  return <div className="app">
-  {isDesktopApp&&!forceLegacy&&<div role="dialog" aria-modal="true" style={{position:"fixed",inset:0,zIndex:100000,background:"#0b0c12",color:"#f5f5f7",display:"grid",placeItems:"center",padding:24}}>
+  {isDesktopApp&&!forceLegacy&&isOutdatedDesktop&&<div role="dialog" aria-modal="true" style={{position:"fixed",inset:0,zIndex:100000,background:"#0b0c12",color:"#f5f5f7",display:"grid",placeItems:"center",padding:24}}>
    <div style={{width:"min(560px,100%)",background:"#171923",border:"1px solid #343747",borderRadius:20,padding:28,boxShadow:"0 24px 80px #0009"}}>
     <div style={{fontSize:12,letterSpacing:2,color:"#a5a8ba",fontWeight:700,marginBottom:14}}>DOGE AI · DESKTOP UPDATE</div>
     <h1 style={{fontSize:28,lineHeight:1.2,margin:"0 0 12px"}}>This version of DOGE AI is out of support now</h1>
