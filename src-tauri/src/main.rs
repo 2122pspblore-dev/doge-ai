@@ -56,19 +56,19 @@ fn execute_desktop_action(action: DesktopAction, screen_width: i32, screen_heigh
     Ok(())
 }
 
+#[tauri::command]
+fn open_vision_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("vision") { window.show().map_err(|e| e.to_string())?; window.set_focus().map_err(|e| e.to_string())?; return Ok(()); }
+    WebviewWindowBuilder::new(&app, "vision", WebviewUrl::App("vision.html".into()))
+        .title("DOGE VISION + HANDS").inner_size(540.0, 820.0).min_inner_size(440.0, 620.0).center().build().map(|_| ()).map_err(|e| e.to_string())
+}
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![capture_screen, execute_desktop_action])
+        .invoke_handler(tauri::generate_handler![capture_screen, execute_desktop_action, open_vision_window])
         .setup(|app| {
             let window = app.get_webview_window("main").expect("main DOGE AI window should exist");
             let app_url = url::Url::parse("https://doge-ai.2122pspblore.workers.dev/").expect("valid DOGE AI URL");
             window.navigate(app_url)?;
-            WebviewWindowBuilder::new(app, "vision", WebviewUrl::App("vision.html".into()))
-                .title("DOGE VISION + HANDS")
-                .inner_size(540.0, 820.0)
-                .min_inner_size(440.0, 620.0)
-                .center()
-                .build()?;
             Ok(())
         })
         .run(tauri::generate_context!())
