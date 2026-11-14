@@ -10,6 +10,9 @@ use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 struct ScreenCapture { data_url: String, width: u32, height: u32 }
 
 #[tauri::command]
+fn get_app_version() -> String { env!("CARGO_PKG_VERSION").to_string() }
+
+#[tauri::command]
 fn capture_screen() -> Result<ScreenCapture, String> {
     let monitors = xcap::Monitor::all().map_err(|e| format!("Could not list displays: {e}"))?;
     let monitor = monitors.iter().find(|m| m.is_primary()).or_else(|| monitors.first())
@@ -64,7 +67,7 @@ fn open_vision_window(app: tauri::AppHandle) -> Result<(), String> {
 }
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![capture_screen, execute_desktop_action, open_vision_window])
+        .invoke_handler(tauri::generate_handler![get_app_version, capture_screen, execute_desktop_action, open_vision_window])
         .setup(|app| {
             let window = app.get_webview_window("main").expect("main DOGE AI window should exist");
             let app_url = url::Url::parse("https://doge-ai.2122pspblore.workers.dev/").expect("valid DOGE AI URL");
