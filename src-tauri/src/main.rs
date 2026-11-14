@@ -4,7 +4,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use enigo::{Button, Coordinate, Direction, Enigo, Key, Keyboard, Mouse, Settings};
 use image::{DynamicImage, ImageFormat};
 use std::io::Cursor;
-use tauri::Manager;
+use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
 #[derive(serde::Serialize)]
 struct ScreenCapture { data_url: String, width: u32, height: u32 }
@@ -63,6 +63,12 @@ fn main() {
             let window = app.get_webview_window("main").expect("main DOGE AI window should exist");
             let app_url = url::Url::parse("https://doge-ai.2122pspblore.workers.dev/").expect("valid DOGE AI URL");
             window.navigate(app_url)?;
+            WebviewWindowBuilder::new(app, "vision", WebviewUrl::App("vision.html".into()))
+                .title("DOGE VISION + HANDS")
+                .inner_size(540.0, 820.0)
+                .min_inner_size(440.0, 620.0)
+                .center()
+                .build()?;
             Ok(())
         })
         .run(tauri::generate_context!())
